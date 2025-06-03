@@ -1,18 +1,19 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Reflection;
+// using System.Reflection; // Can be removed if not used
 using System.Net.Http;
 using System.Threading;
 using System.Text.Json;
 using SharpCompress.Common;
 using System.Text.RegularExpressions;
 using SharpCompress.Readers;
-using Unverum.UI;
+using Unverum.UI; // Ensure this is present to access UpdateFileBox and SelectableGameBananaItemFile
 using SharpCompress.Archives.SevenZip;
-using System.Linq;
+using System.Linq; // For .Any() and .Select()
 using SharpCompress.Archives;
+using System.Collections.Generic; // For List<>
 
 namespace Unverum
 {
@@ -23,80 +24,72 @@ namespace Unverum
         private string DL_ID;
         private string MOD_TYPE;
         private string MOD_ID;
-        private string fileName;
-        private string fileDescription;
         private bool cancelled;
-        private bool downloadAll;
-        private HttpClient client = new();
-        private CancellationTokenSource cancellationToken = new();
-        private GameBananaAPIV4 response = new();
+        private HttpClient client = new(); 
+        private CancellationTokenSource cancellationToken = new(); 
+        private GameBananaAPIV4 response = new(); // For the original Download method
         private ProgressBox progressBox;
+
+
         public async void BrowserDownload(string game, GameBananaRecord record)
         {
-            DownloadWindow downloadWindow = new DownloadWindow(record);
-            downloadWindow.ShowDialog();
-            if (downloadWindow.YesNo)
+            UpdateFileBox fileBox = new UpdateFileBox(record.AllFiles, record.Title);
+            bool? dialogResult = fileBox.ShowDialog();
+
+            if (dialogResult == true && fileBox.SelectedFiles != null && fileBox.SelectedFiles.Any())
             {
-                string downloadUrl = null;
-                string fileName = null;
-                if (record.AllFiles.Count == 1)
+                string targetModFolderName = string.IsNullOrWhiteSpace(fileBox.ModFolderName) ? record.Title : fileBox.ModFolderName;
+                targetModFolderName = string.Concat(targetModFolderName.Split(Path.GetInvalidFileNameChars())); // Clean folder name
+
+                foreach (var selectableFile in fileBox.SelectedFiles)
                 {
-                    downloadUrl = record.AllFiles[0].DownloadUrl;
-                    fileName = record.AllFiles[0].FileName;
-                    fileDescription = record.AllFiles[0].Description;
-                }
-                else if (record.AllFiles.Count > 1)
-                {
-                    UpdateFileBox fileBox = new UpdateFileBox(record.AllFiles, record.Title);
-                    fileBox.Activate();
-                    fileBox.ShowDialog();
-                    downloadAll = fileBox.selectedDownloadAll;
-                    downloadUrl = fileBox.chosenFileUrl;
-                    fileName = fileBox.chosenFileName;
-                    fileDescription = fileBox.chosenFileDescription;
-                }
-                if (downloadAll)
-                {
-                    foreach (GameBananaItemFile file in record.AllFiles)
+                    GameBananaItemFile fileToDownload = selectableFile.FileInfo; // Access the original GameBananaItemFile
+                    if (fileToDownload.DownloadUrl != null && fileToDownload.FileName != null)
                     {
-                        downloadUrl = file.DownloadUrl;
-                        fileName = file.FileName;
-                        fileDescription = file.Description;
-                        if (downloadUrl != null && fileName != null)
+                        var individualCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Token);
+                        
+                        bool downloadSuccess = await DownloadFile(fileToDownload.DownloadUrl, fileToDownload.FileName, new Progress<DownloadProgress>(ReportUpdateProgress), individualCts);
+                        
+                        if (!cancelled && downloadSuccess) 
                         {
-                            await DownloadFile(downloadUrl, fileName, new Progress<DownloadProgress>(ReportUpdateProgress),
-                                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Token));
-                            if (!cancelled)
-                                await ExtractFile(fileName, game, record);
+                            await ExtractFile(fileToDownload.FileName, game, record, targetModFolderName, fileToDownload.Description);
                         }
-                    }
-                }
-                else
-                {
-                    if (downloadUrl != null && fileName != null)
-                    {
-                        await DownloadFile(downloadUrl, fileName, new Progress<DownloadProgress>(ReportUpdateProgress),
-                            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Token));
-                        if (!cancelled)
-                            await ExtractFile(fileName, game, record);
+                        if (cancelled) break; 
                     }
                 }
             }
         }
-        public async void Download(string line, bool running)
+
+        public async void Download(string line, bool running) // This method seems to be for protocol handling
         {
             if (ParseProtocol(line))
             {
-                if (await GetData())
+                if (await GetData()) // GetData fills 'response'
                 {
+                    // For protocol download, assume only one specific file is downloaded
+                    // and the mod folder name will be the 'response' title.
                     DownloadWindow downloadWindow = new DownloadWindow(response);
                     downloadWindow.ShowDialog();
                     if (downloadWindow.YesNo)
                     {
-                        await DownloadFile(URL_TO_ARCHIVE, fileName, new Progress<DownloadProgress>(ReportUpdateProgress),
+                        string currentFileName = this.response.Files.FirstOrDefault(f => f.Id == DL_ID)?.FileName;
+                        string currentFileDescription = this.response.Files.FirstOrDefault(f => f.Id == DL_ID)?.Description;
+
+                        if (string.IsNullOrEmpty(currentFileName))
+                        {
+                             MessageBox.Show($"No se pudo encontrar el nombre del archivo para el ID: {DL_ID}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                             if (running) Environment.Exit(0);
+                             return;
+                        }
+
+                        bool downloadSuccess = await DownloadFile(URL_TO_ARCHIVE, currentFileName, new Progress<DownloadProgress>(ReportUpdateProgress),
                             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Token));
-                        if (!cancelled)
-                            await ExtractFile(fileName, response.Game.Name.Replace(":", String.Empty), response);
+                        
+                        if (!cancelled && downloadSuccess)
+                        {
+                            string modFolderName = string.Concat(response.Title.Split(Path.GetInvalidFileNameChars()));
+                            await ExtractFile(currentFileName, response.Game.Name.Replace(":", String.Empty), response, modFolderName, currentFileDescription);
+                        }
                     }
                 }
             }
@@ -104,14 +97,13 @@ namespace Unverum
                 Environment.Exit(0);
         }
 
+
         private async Task<bool> GetData()
         {
             try
             {
                 string responseString = await client.GetStringAsync(URL);
                 response = JsonSerializer.Deserialize<GameBananaAPIV4>(responseString);
-                fileName = response.Files.Where(x => x.Id == DL_ID).ToArray()[0].FileName;
-                fileDescription = response.Files.Where(x => x.Id == DL_ID).ToArray()[0].Description;
                 return true;
             }
             catch (Exception e)
@@ -120,17 +112,20 @@ namespace Unverum
                 return false;
             }
         }
+        
         private void ReportUpdateProgress(DownloadProgress progress)
         {
+            if (progressBox == null || progressBox.finished) return;
+
             if (progress.Percentage == 1)
             {
                 progressBox.finished = true;
             }
             progressBox.progressBar.Value = progress.Percentage * 100;
             progressBox.taskBarItem.ProgressValue = progress.Percentage;
-            progressBox.progressTitle.Text = $"Downloading {progress.FileName}...";
+            progressBox.progressTitle.Text = $"Descargando {progress.FileName}...";
             progressBox.progressText.Text = $"{Math.Round(progress.Percentage * 100, 2)}% " +
-                $"({StringConverters.FormatSize(progress.DownloadedBytes)} of {StringConverters.FormatSize(progress.TotalBytes)})";
+                $"({StringConverters.FormatSize(progress.DownloadedBytes)} de {StringConverters.FormatSize(progress.TotalBytes)})";
         }
 
         private bool ParseProtocol(string line)
@@ -140,7 +135,6 @@ namespace Unverum
                 line = line.Replace("unverum:", "");
                 string[] data = line.Split(',');
                 URL_TO_ARCHIVE = data[0];
-                // Used to grab file info from dictionary
                 var match = Regex.Match(URL_TO_ARCHIVE, @"\d*$");
                 DL_ID = match.Value;
                 MOD_TYPE = data[1];
@@ -154,11 +148,13 @@ namespace Unverum
                 return false;
             }
         }
-        private async Task ExtractFile(string fileName, string game, GameBananaRecord record)
+
+        // New signature for ExtractFile to accept target mod folder name and specific file description
+        private async Task ExtractFile(string downloadedFileName, string game, GameBananaRecord originalRecord, string targetModFolderName, string fileSpecificDescription)
         {
             await Task.Run(() =>
             {
-                switch (game)
+                switch (game) 
                 {
                     case "Demon Slayer The Hinokami Chronicles":
                         game = "Demon Slayer";
@@ -170,20 +166,15 @@ namespace Unverum
                         game = "Dragon Ball Sparking! ZERO";
                         break;
                 }
-                string _ArchiveSource = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}";
-                string _ArchiveType = Path.GetExtension(fileName);
-                string ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{string.Concat(record.Title.Split(Path.GetInvalidFileNameChars()))}";
-                // Find a unique destination if it already exists
-                var counter = 2;
-                while (Directory.Exists(ArchiveDestination))
-                {
-                    ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{string.Concat(record.Title.Split(Path.GetInvalidFileNameChars()))} ({counter})";
-                    ++counter;
-                }
+                string _ArchiveSource = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{downloadedFileName}";
+                string ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{targetModFolderName}";
+                
                 if (File.Exists(_ArchiveSource))
                 {
                     try
                     {
+                        Directory.CreateDirectory(ArchiveDestination); 
+
                         if (Path.GetExtension(_ArchiveSource).Equals(".7z", StringComparison.InvariantCultureIgnoreCase))
                         {
                             using (var archive = SevenZipArchive.Open(_ArchiveSource))
@@ -218,42 +209,59 @@ namespace Unverum
                                 }
                             }
                         }
-                        if (!File.Exists($@"{ArchiveDestination}{Global.s}mod.json"))
+                        
+                        string metadataFilePath = $@"{ArchiveDestination}{Global.s}mod.json";
+                        Metadata metadata;
+                        if (File.Exists(metadataFilePath))
                         {
-                            Metadata metadata = new Metadata();
-                            metadata.submitter = record.Owner.Name;
-                            metadata.description = record.Description;
-                            metadata.filedescription = fileDescription;
-                            metadata.preview = record.Image;
-                            metadata.homepage = record.Link;
-                            metadata.avi = record.Owner.Avatar;
-                            metadata.upic = record.Owner.Upic;
-                            metadata.cat = record.CategoryName;
-                            metadata.caticon = record.Category.Icon;
-                            metadata.lastupdate = record.DateUpdated;
-                            string metadataString = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
-                            File.WriteAllText($@"{ArchiveDestination}{Global.s}mod.json", metadataString);
+                            try
+                            {
+                                metadata = JsonSerializer.Deserialize<Metadata>(File.ReadAllText(metadataFilePath));
+                            }
+                            catch { metadata = new Metadata(); } 
                         }
+                        else
+                        {
+                            metadata = new Metadata();
+                        }
+
+                        metadata.submitter = originalRecord.Owner.Name;
+                        metadata.description = originalRecord.Description; 
+                        metadata.filedescription = fileSpecificDescription; 
+                        metadata.preview = originalRecord.Image;
+                        metadata.homepage = originalRecord.Link;
+                        metadata.avi = originalRecord.Owner.Avatar;
+                        metadata.upic = originalRecord.Owner.Upic;
+                        metadata.cat = originalRecord.CategoryName;
+                        metadata.caticon = originalRecord.Category.Icon;
+                        metadata.lastupdate = originalRecord.DateUpdated;
+                        
+                        string metadataString = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+                        File.WriteAllText(metadataFilePath, metadataString);
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show($"Couldn't extract {fileName}: {e.Message}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        Application.Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"No se pudo extraer {downloadedFileName}: {e.Message}", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning)
+                        );
                     }
                 }
-                // Check if folder output folder exists, if not nothing was extracted
-                if (!Directory.Exists(ArchiveDestination))
+                
+                if (!Directory.Exists(ArchiveDestination) || !Directory.EnumerateFileSystemEntries(ArchiveDestination).Any(entry => !Path.GetFileName(entry).Equals("mod.json", StringComparison.OrdinalIgnoreCase)))
                 {
-                    MessageBox.Show($"Didn't extract {fileName} due to improper format", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                     Application.Current.Dispatcher.Invoke(() =>
+                        MessageBox.Show($"No se extrajo {downloadedFileName} debido a un formato incorrecto o archivo vacío.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning)
+                    );
                 }
                 else
                 {
-                    // Only delete if successfully extracted
-                    File.Delete(_ArchiveSource);
+                    File.Delete(_ArchiveSource); 
                 }
             });
-
         }
-        private async Task ExtractFile(string fileName, string game, GameBananaAPIV4 record)
+        
+        // Similar modification for the ExtractFile overload that takes GameBananaAPIV4
+        private async Task ExtractFile(string downloadedFileName, string game, GameBananaAPIV4 originalRecord, string targetModFolderName, string fileSpecificDescription)
         {
             await Task.Run(() =>
             {
@@ -266,20 +274,15 @@ namespace Unverum
                         game = "IDOLM@STER";
                         break;
                 }
-                string _ArchiveSource = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}";
-                string _ArchiveType = Path.GetExtension(fileName);
-                string ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{string.Concat(record.Title.Split(Path.GetInvalidFileNameChars()))}";
-                // Find a unique destination if it already exists
-                var counter = 2;
-                while (Directory.Exists(ArchiveDestination))
-                {
-                    ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{string.Concat(record.Title.Split(Path.GetInvalidFileNameChars()))} ({counter})";
-                    ++counter;
-                }
+                string _ArchiveSource = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{downloadedFileName}";
+                string ArchiveDestination = $@"{Global.assemblyLocation}{Global.s}Mods{Global.s}{game}{Global.s}{targetModFolderName}";
+
                 if (File.Exists(_ArchiveSource))
                 {
                     try
                     {
+                        Directory.CreateDirectory(ArchiveDestination);
+
                         if (Path.GetExtension(_ArchiveSource).Equals(".7z", StringComparison.InvariantCultureIgnoreCase))
                         {
                             using (var archive = SevenZipArchive.Open(_ArchiveSource))
@@ -314,98 +317,120 @@ namespace Unverum
                                 }
                             }
                         }
-                        if (!File.Exists($@"{ArchiveDestination}{Global.s}mod.json"))
+                        
+                        string metadataFilePath = $@"{ArchiveDestination}{Global.s}mod.json";
+                        Metadata metadata;
+                        if (File.Exists(metadataFilePath))
                         {
-                            Metadata metadata = new Metadata();
-                            metadata.submitter = record.Owner.Name;
-                            metadata.description = record.Description;
-                            metadata.filedescription = fileDescription;
-                            metadata.preview = record.Image;
-                            metadata.homepage = record.Link;
-                            metadata.avi = record.Owner.Avatar;
-                            metadata.upic = record.Owner.Upic;
-                            metadata.cat = record.CategoryName;
-                            metadata.caticon = record.Category.Icon;
-                            metadata.lastupdate = record.DateUpdated;
-                            string metadataString = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
-                            File.WriteAllText($@"{ArchiveDestination}{Global.s}mod.json", metadataString);
+                             try { metadata = JsonSerializer.Deserialize<Metadata>(File.ReadAllText(metadataFilePath)); }
+                             catch { metadata = new Metadata(); }
                         }
+                        else
+                        {
+                            metadata = new Metadata();
+                        }
+
+                        metadata.submitter = originalRecord.Owner.Name;
+                        metadata.description = originalRecord.Description;
+                        metadata.filedescription = fileSpecificDescription; 
+                        metadata.preview = originalRecord.Image;
+                        metadata.homepage = originalRecord.Link;
+                        metadata.avi = originalRecord.Owner.Avatar;
+                        metadata.upic = originalRecord.Owner.Upic;
+                        metadata.cat = originalRecord.CategoryName;
+                        metadata.caticon = originalRecord.Category.Icon;
+                        metadata.lastupdate = originalRecord.DateUpdated;
+                        string metadataString = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+                        File.WriteAllText(metadataFilePath, metadataString);
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show($"Couldn't extract {fileName}: {e.Message}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        Application.Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"No se pudo extraer {downloadedFileName}: {e.Message}", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning)
+                        );
                     }
                 }
-                // Check if folder output folder exists, if not nothing was extracted
-                if (!Directory.Exists(ArchiveDestination))
+
+                if (!Directory.Exists(ArchiveDestination) || !Directory.EnumerateFileSystemEntries(ArchiveDestination).Any(entry => !Path.GetFileName(entry).Equals("mod.json", StringComparison.OrdinalIgnoreCase)))
                 {
-                    MessageBox.Show($"Didn't extract {fileName} due to improper format", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Application.Current.Dispatcher.Invoke(() =>
+                        MessageBox.Show($"No se extrajo {downloadedFileName} debido a un formato incorrecto o archivo vacío.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning)
+                    );
                 }
                 else
                 {
-                    // Only delete if successfully extracted
-                    File.Delete(_ArchiveSource);
+                     File.Delete(_ArchiveSource);
                 }
             });
-
         }
-        private async Task DownloadFile(string uri, string fileName, Progress<DownloadProgress> progress, CancellationTokenSource cancellationToken)
+
+        // Updated DownloadFile to return a boolean indicating success/cancellation
+        private async Task<bool> DownloadFile(string uri, string fileName, Progress<DownloadProgress> progress, CancellationTokenSource cancellationTokenSourceLocal)
         {
+            cancelled = false; // Reset cancellation state for this download
             try
             {
-                // Create the downloads folder if necessary
                 Directory.CreateDirectory($@"{Global.assemblyLocation}{Global.s}Downloads");
-                // Download the file if it doesn't already exist
-                if (File.Exists($@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}"))
+                string filePath = $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}";
+
+                if (File.Exists(filePath))
                 {
-                    try
-                    {
-                        File.Delete($@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}");
-                    }
+                    try { File.Delete(filePath); }
                     catch (Exception e)
                     {
-                        MessageBox.Show($"Couldn't delete the already existing {Global.assemblyLocation}/Downloads/{fileName} ({e.Message})", 
-                            "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
+                        MessageBox.Show($"No se pudo eliminar el archivo existente {filePath} ({e.Message})", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return false;
                     }
                 }
-                progressBox = new ProgressBox(cancellationToken);
+
+                progressBox = new ProgressBox(cancellationTokenSourceLocal); // Use the local CancellationTokenSource
                 progressBox.progressBar.Value = 0;
                 progressBox.finished = false;
-                progressBox.Title = $"Download Progress";
-                progressBox.Show();
-                progressBox.Activate();
-                // Write and download the file
-                using (var fs = new FileStream(
-                    $@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}", FileMode.Create, FileAccess.Write, FileShare.None))
+                progressBox.Title = $"Progreso de Descarga";
+                
+                // Ensure Show() is called on the UI thread
+                Application.Current.Dispatcher.Invoke(() => {
+                    progressBox.Show();
+                    progressBox.Activate();
+                });
+                
+                using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await client.DownloadAsync(uri, fs, fileName, progress, cancellationToken.Token);
+                    await client.DownloadAsync(uri, fs, fileName, progress, cancellationTokenSourceLocal.Token);
                 }
-                progressBox.Close();
+                
+                if (!progressBox.finished) 
+                {
+                    // Ensure Close() is called on the UI thread
+                     Application.Current.Dispatcher.Invoke(() => progressBox.Close());
+                }
+                return true; // Success
             }
             catch (OperationCanceledException)
             {
-                // Remove the file is it will be a partially downloaded one and close up
-                File.Delete($@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}");
+                cancelled = true;
+                if (File.Exists($@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}"))
+                {
+                    File.Delete($@"{Global.assemblyLocation}{Global.s}Downloads{Global.s}{fileName}");
+                }
                 if (progressBox != null)
                 {
                     progressBox.finished = true;
-                    progressBox.Close();
-                    cancelled = true;
+                    Application.Current.Dispatcher.Invoke(() => progressBox.Close());
                 }
-                return;
+                return false; // Cancelled
             }
             catch (Exception e)
             {
                 if (progressBox != null)
                 {
                     progressBox.finished = true;
-                    progressBox.Close();
+                    Application.Current.Dispatcher.Invoke(() => progressBox.Close());
                 }
-                MessageBox.Show($"Error whilst downloading {fileName}. {e.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                cancelled = true;
+                MessageBox.Show($"Error mientras se descargaba {fileName}. {e.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                cancelled = true; 
+                return false; // Failure
             }
         }
-
     }
 }
