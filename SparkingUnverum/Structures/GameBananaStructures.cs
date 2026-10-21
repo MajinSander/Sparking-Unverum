@@ -163,9 +163,12 @@ namespace SparkingUnverum
     // Full information about a mod, sound or WiP (Model/{id}?_csvProperties=... or Model/Multi)
     public class GameBananaSubmission
     {
-        public const string Properties = "_idRow,_sName,_sProfileUrl,_aSubmitter,_aGame,_aCategory,_aSuperCategory,_aPreviewMedia," +
-            "_sDescription,_sText,_aFiles,_aAlternateFileSources,_tsDateAdded,_tsDateUpdated,_bHasUpdates,_aLatestUpdates,_bIsNsfw," +
-            "_nLikeCount,_nViewCount,_nDownloadCount";
+        // Everything needed to update a mod and fill its mod.json
+        public const string UpdateProperties = "_idRow,_sName,_sProfileUrl,_aSubmitter,_aGame,_aCategory,_aSuperCategory,_aPreviewMedia," +
+            "_sDescription,_aFiles,_aAlternateFileSources,_tsDateAdded,_tsDateUpdated,_bHasUpdates,_aLatestUpdates,_bIsNsfw," +
+            "_nLikeCount,_nViewCount,_nDownloadCount,_bIsTrashed,_bIsWithheld,_bIsPrivate,_nStatus";
+        // Plus the full description shown in the mod store
+        public const string Properties = UpdateProperties + ",_sText";
         [JsonPropertyName("_idRow")]
         public long Id { get; set; }
         [JsonIgnore]
@@ -210,6 +213,20 @@ namespace SparkingUnverum
         public int Views { get; set; }
         [JsonPropertyName("_nDownloadCount")]
         public int Downloads { get; set; }
+        // Deleted by its author
+        [JsonPropertyName("_bIsTrashed")]
+        public bool IsTrashed { get; set; }
+        // Hidden by the GameBanana moderators
+        [JsonPropertyName("_bIsWithheld")]
+        public bool IsWithheld { get; set; }
+        [JsonPropertyName("_bIsPrivate")]
+        public bool IsPrivate { get; set; }
+        // 0 = visible, 3 = deleted, 6 = withheld. Batch requests don't always set the flags above, but they do send the status
+        [JsonPropertyName("_nStatus")]
+        public int Status { get; set; }
+        // Every visible submission has a publication date, deleted and withheld ones come without it
+        [JsonIgnore]
+        public bool IsUnavailable => IsTrashed || IsWithheld || IsPrivate || Status != 0 || DateAddedLong == 0;
 
         [JsonIgnore]
         public List<GameBananaImage> Images => Media?.Images?.Where(x => x.Url != null).ToList() ?? new();

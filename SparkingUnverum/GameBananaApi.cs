@@ -28,11 +28,7 @@ namespace SparkingUnverum
     {
         private const string Base = "https://gamebanana.com/apiv11";
         public static readonly HttpClient Client = CreateClient();
-        private static readonly JsonSerializerOptions Options = new()
-        {
-            NumberHandling = JsonNumberHandling.AllowReadingFromString,
-            Converters = { new TolerantObjectConverterFactory() }
-        };
+        private static JsonSerializerOptions Options => GameBananaJson.Options;
 
         private static HttpClient CreateClient()
         {
@@ -100,19 +96,27 @@ namespace SparkingUnverum
             return submission;
         }
 
-        // Fetches many submissions of the same model at once, used to check for mod updates
-        public static async Task<List<GameBananaSubmission>> GetSubmissions(string model, IEnumerable<long> ids)
+        // Fetches many submissions of the same model at once, used to check for mod updates.
+        // A chunk that fails is reported in errors and the rest are still returned
+        public static async Task<List<GameBananaSubmission>> GetSubmissions(string model, IEnumerable<long> ids, List<Exception> errors = null)
         {
             var result = new List<GameBananaSubmission>();
             foreach (var chunk in ids.Distinct().Chunk(40))
             {
-                var url = $"{Base}/{model}/Multi?_csvRowIds={string.Join(",", chunk)}&_csvProperties={GameBananaSubmission.Properties}";
-                var submissions = await Get<List<GameBananaSubmission>>(url);
-                if (submissions == null)
-                    continue;
-                foreach (var submission in submissions.Where(x => x != null))
-                    submission.Model = model;
-                result.AddRange(submissions.Where(x => x != null));
+                try
+                {
+                    var url = $"{Base}/{model}/Multi?_csvRowIds={string.Join(",", chunk)}&_csvProperties={GameBananaSubmission.UpdateProperties}";
+                    var submissions = await Get<List<GameBananaSubmission>>(url);
+                    if (submissions == null)
+                        continue;
+                    foreach (var submission in submissions)
+                        submission.Model = model;
+                    result.AddRange(submissions);
+                }
+                catch (Exception e) when (errors != null)
+                {
+                    errors.Add(e);
+                }
             }
             return result;
         }
@@ -139,44 +143,6 @@ namespace SparkingUnverum
                 _ => null
             };
             return model != null;
-        }
-    }
-
-    // GameBanana sometimes sends [] instead of an object when it is empty
-    public class TolerantObjectConverterFactory : JsonConverterFactory
-    {
-        public override bool CanConvert(Type typeToConvert) =>
-            typeToConvert == typeof(GameBananaPreviewMedia) || typeToConvert == typeof(GameBananaCategory)
-            || typeToConvert == typeof(GameBananaMember) || typeToConvert == typeof(GameBananaGame);
-
-        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) =>
-            (JsonConverter)Activator.CreateInstance(typeof(TolerantObjectConverter<>).MakeGenericType(typeToConvert));
-
-        private class TolerantObjectConverter<T> : JsonConverter<T> where T : class
-        {
-            // Same options without this converter to avoid recursion
-            private static JsonSerializerOptions inner;
-            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-            {
-                if (reader.TokenType != JsonTokenType.StartObject)
-                {
-                    reader.Skip();
-                    return null;
-                }
-                if (inner == null)
-                {
-                    var copy = new JsonSerializerOptions(options);
-                    for (int i = copy.Converters.Count - 1; i >= 0; i--)
-                        if (copy.Converters[i] is TolerantObjectConverterFactory)
-                            copy.Converters.RemoveAt(i);
-                    inner = copy;
-                }
-                return JsonSerializer.Deserialize<T>(ref reader, inner);
-            }
-            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
-            {
-                JsonSerializer.Serialize(writer, value, typeof(T));
-            }
         }
     }
 }

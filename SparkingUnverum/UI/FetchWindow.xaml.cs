@@ -36,6 +36,13 @@ namespace SparkingUnverum
             try
             {
                 var submission = await GameBananaApi.GetSubmission(model, id);
+                if (submission.IsUnavailable)
+                {
+                    ErrorText.Text = Loc.T("Download.Unavailable", submission.Title);
+                    ErrorText.Visibility = Visibility.Visible;
+                    ConfirmButton.IsEnabled = true;
+                    return;
+                }
                 ModDownloader.WriteMetadata(Path.Combine(Global.ModsPath, _mod.name), submission, null);
                 success = true;
                 Close();

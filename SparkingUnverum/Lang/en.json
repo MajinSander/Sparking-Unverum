@@ -17,6 +17,7 @@
   "Log.ClassicConfigImported": "Imported the Sparking! ZERO settings of the classic Unverum.",
   "Log.ModAdded": "Added {0}",
   "Log.ModRemoved": "Removed {0}",
+  "Log.SkippedItem": "Skipped a {0} that GameBanana sent incomplete ({1})",
 
   "Main.ManageTab": "My Mods",
   "Main.BrowseTab": "Mod Store",
@@ -126,6 +127,7 @@
   "Download.NoFiles": "{0} has no files to download from GameBanana.",
   "Download.AlreadyInstalled": "You already have {0} installed in the folder \"{1}\".\n\nYes: replace that mod (keeps its place in the list)\nNo: install it as a new mod\nCancel: do nothing",
   "Download.EmptyArchive": "{0} didn't contain any files",
+  "Download.Unavailable": "{0} isn't available on GameBanana anymore (deleted by its author or removed by the moderators).",
   "Download.ExtractError": "Couldn't extract {0} ({1})",
   "Download.Installed": "{0} installed in {1}",
   "Download.OneClick": "Received a 1-click install from GameBanana",
@@ -151,6 +153,7 @@
   "Update.NoFiles": "{0} has an update but no files can be downloaded from GameBanana",
   "Update.Cancelled": "Cancelled the update for {0}",
   "Update.Updated": "{0} updated!",
+  "Update.Unavailable": "{0} mods aren't available on GameBanana anymore (deleted by their author or removed), they won't get updates: {1}",
 
   "AppUpdate.Checking": "Checking for Sparking Unverum updates...",
   "AppUpdate.UpToDate": "Sparking Unverum v{0} is up to date",

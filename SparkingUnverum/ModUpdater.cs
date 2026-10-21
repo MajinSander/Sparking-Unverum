@@ -30,25 +30,33 @@ namespace SparkingUnverum
                 return;
             }
             var submissions = new Dictionary<(string, long), GameBananaSubmission>();
-            try
-            {
-                foreach (var group in installed.GroupBy(x => x.Model))
-                    foreach (var submission in await GameBananaApi.GetSubmissions(group.Key, group.Select(x => x.Id)))
-                        submissions[(group.Key, submission.Id)] = submission;
-            }
-            catch (Exception e)
-            {
-                Global.logger.WriteLine(Loc.T("Update.CheckError", e.Message), LoggerType.Error);
+            var errors = new List<Exception>();
+            foreach (var group in installed.GroupBy(x => x.Model))
+                foreach (var submission in await GameBananaApi.GetSubmissions(group.Key, group.Select(x => x.Id), errors))
+                    submissions[(group.Key, submission.Id)] = submission;
+            // Some requests failed, check the mods that did arrive
+            foreach (var error in errors.Select(x => x.Message).Distinct())
+                Global.logger.WriteLine(Loc.T("Update.CheckError", error), LoggerType.Error);
+            if (submissions.Count == 0 && errors.Count > 0)
                 return;
-            }
+
             var updates = 0;
+            var unavailable = new List<string>();
             foreach (var mod in installed)
             {
                 if (!submissions.TryGetValue((mod.Model, mod.Id), out var submission))
                     continue;
+                // Deleted by its author or hidden by the moderators, nothing to update
+                if (submission.IsUnavailable)
+                {
+                    unavailable.Add(Path.GetFileName(mod.Folder));
+                    continue;
+                }
                 if (await UpdateMod(mod.Folder, mod.Metadata, submission))
                     updates++;
             }
+            if (unavailable.Count > 0)
+                Global.logger.WriteLine(Loc.T("Update.Unavailable", unavailable.Count, string.Join(", ", unavailable)), LoggerType.Info);
             Global.logger.WriteLine(updates == 0 ? Loc.T("Update.None") : Loc.T("Update.Done"), LoggerType.Info);
         }
 

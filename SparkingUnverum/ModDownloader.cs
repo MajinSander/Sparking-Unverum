@@ -94,6 +94,12 @@ namespace SparkingUnverum
         // Asks which files to download, downloads and extracts them, returns the name of the mod folder
         public async Task<string> DownloadSubmission(GameBananaSubmission submission, long preselectedFile = 0, string preselectedUrl = null)
         {
+            if (submission.IsUnavailable)
+            {
+                Global.logger.WriteLine(Loc.T("Download.Unavailable", submission.Title), LoggerType.Warning);
+                MessageBox.Show(Loc.T("Download.Unavailable", submission.Title), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                return null;
+            }
             if (!submission.HasFiles)
             {
                 if (submission.HasAltLinks)

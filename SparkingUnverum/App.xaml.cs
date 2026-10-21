@@ -19,7 +19,7 @@ namespace SparkingUnverum
             }
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -41,17 +41,11 @@ namespace SparkingUnverum
             Loc.Init(Global.config.Language);
             RegistryConfig.InstallGBHandler();
 
-            var window = new MainWindow();
+            // Opened from a 1-click install button: install the mod and skip the self update check
+            var window = new MainWindow(checkAppUpdate: link == null);
             MainWindow = window;
             window.Show();
             SingleInstance.Listen(message => Dispatcher.InvokeAsync(() => window.HandleExternalMessage(message)));
-
-            // Self update check, skipped when opened from a 1-click install button
-            if (link == null && Global.config.CheckAppUpdates && await AutoUpdater.CheckForUpdate(true))
-            {
-                window.Close();
-                return;
-            }
             if (link != null)
                 window.HandleExternalMessage(link);
         }

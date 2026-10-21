@@ -26,9 +26,11 @@ namespace SparkingUnverum
         private readonly FlowDocument defaultFlow = new();
         private readonly ObservableCollection<string> LauncherOptions = new() { Loc.T("Main.LaunchExe"), Loc.T("Main.LaunchSteam") };
         private bool busy;
+        private readonly bool checkAppUpdate;
 
-        public MainWindow()
+        public MainWindow(bool checkAppUpdate = true)
         {
+            this.checkAppUpdate = checkAppUpdate;
             InitializeComponent();
             Global.logger = new Logger(ConsoleWindow);
             Global.logger.WriteLine(Loc.T("Log.Launched", App.Version), LoggerType.Info);
@@ -96,6 +98,12 @@ namespace SparkingUnverum
             OnFirstOpen();
             OfferClassicImport();
 
+            // First Sparking Unverum itself, then the mods, so their questions don't overlap
+            if (checkAppUpdate && Global.config.CheckAppUpdates && await AutoUpdater.CheckForUpdate(true))
+            {
+                Close();
+                return;
+            }
             if (Global.config.CheckModUpdatesOnStart)
                 await CheckModUpdates();
         }
