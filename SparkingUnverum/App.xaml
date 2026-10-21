@@ -1,0 +1,17 @@
+﻿<Application x:Class="SparkingUnverum.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Controls/Button.xaml"/>
+                <ResourceDictionary Source="Controls/ComboBox.xaml"/>
+                <ResourceDictionary Source="Controls/ScrollViewer.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Sparking Unverum colors -->
+            <SolidColorBrush x:Key="AccentBrush" Color="#F28C1E"/>
+            <SolidColorBrush x:Key="AccentDarkBrush" Color="#C25E0C"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
