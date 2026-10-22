@@ -173,7 +173,8 @@ namespace SparkingUnverum
                     Directory.Delete(destination);
                 return null;
             }
-            WriteMetadata(destination, submission, string.Join("\n", fileBox.SelectedFiles.Select(x => x.Description).Where(x => !string.IsNullOrWhiteSpace(x))));
+            WriteMetadata(destination, submission, string.Join("\n", fileBox.SelectedFiles.Select(x => x.Description).Where(x => !string.IsNullOrWhiteSpace(x))),
+                fileBox.SelectedFiles.Select(x => x.FileName).ToList());
             Global.logger.WriteLine(Loc.T("Download.Installed", submission.Title, folderName), LoggerType.Info);
             return folderName;
         }
@@ -217,9 +218,24 @@ namespace SparkingUnverum
             }
         }
 
-        public static void WriteMetadata(string modFolder, GameBananaSubmission submission, string fileDescription)
+        public static void SaveMetadata(string modFolder, Metadata metadata)
+        {
+            try
+            {
+                File.WriteAllText(Path.Combine(modFolder, "mod.json"), JsonSerializer.Serialize(metadata, Global.JsonOptions));
+            }
+            catch (Exception e)
+            {
+                Global.logger.WriteLine(e.Message, LoggerType.Error);
+            }
+        }
+
+        // files: names of the downloaded GameBanana files, used to pick the same ones when updating
+        public static void WriteMetadata(string modFolder, GameBananaSubmission submission, string fileDescription, List<string> files = null)
         {
             var metadata = ReadMetadata(modFolder) ?? new Metadata();
+            if (files != null)
+                metadata.files = files;
             metadata.submitter = submission.Owner?.Name;
             metadata.description = submission.Description;
             if (fileDescription != null)

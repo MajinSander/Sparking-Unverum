@@ -290,6 +290,9 @@ namespace SparkingUnverum
         [JsonPropertyName("_bWasFeatured")]
         public bool WasFeatured { get; set; }
 
+        // Set by the store when this mod is already in the mod list
+        [JsonIgnore]
+        public bool IsInstalled { get; set; }
         [JsonIgnore]
         public bool IsSpoiler => Title != null && Title.ToUpperInvariant().StartsWith("(SPOILER)");
         [JsonIgnore]

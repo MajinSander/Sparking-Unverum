@@ -4,10 +4,8 @@
   "Common.Cancel": "Cancelar",
   "Common.Close": "Cerrar",
   "Common.Confirm": "Confirmar",
-
   "App.AlreadyRunning": "Sparking Unverum ya está abierto.",
   "App.UnhandledException": "Se ha producido un error inesperado:\n{0}\n\nError interno:\n{1}\n\nDetalles:\n{2}",
-
   "Log.Info": "INFO",
   "Log.Warning": "AVISO",
   "Log.Error": "ERROR",
@@ -18,7 +16,6 @@
   "Log.ModAdded": "Añadido {0}",
   "Log.ModRemoved": "Eliminado {0}",
   "Log.SkippedItem": "Se ha ignorado un {0} que GameBanana envió incompleto ({1})",
-
   "Main.ManageTab": "Mis mods",
   "Main.BrowseTab": "Tienda de mods",
   "Main.Settings": "Ajustes",
@@ -50,9 +47,9 @@
   "Main.LaunchError": "No se pudo abrir {0} ({1})",
   "Main.OpenError": "No se pudo abrir {0} ({1})",
   "Main.DeleteTitle": "Borrar mods",
-  "Main.DeleteConfirm": "¿Seguro que quieres borrar {0}?\nNo se puede deshacer.",
-  "Main.DeleteConfirmMany": "¿Seguro que quieres borrar {0} mods?\nNo se puede deshacer.",
-  "Main.Deleted": "Borrado {0}",
+  "Main.DeleteConfirm": "¿Borrar {0}?\nSe enviará a la papelera de reciclaje.",
+  "Main.DeleteConfirmMany": "¿Borrar {0} mods?\nSe enviarán a la papelera de reciclaje.",
+  "Main.Deleted": "{0} enviado a la papelera",
   "Main.DeleteError": "No se pudo borrar {0} ({1})",
   "Main.NoPage": "{0} no está vinculado con GameBanana",
   "Main.ModCreated": "Mod {0} creado",
@@ -60,13 +57,11 @@
   "Main.NoSearchResults": "No hay mods que coincidan con {0}",
   "Main.SortConfirm": "¿Ordenar todos los mods alfabéticamente?",
   "Main.GroupConfirm": "¿Subir todos los mods activados arriba de la lista?",
-
   "Meta.Submitter": "Autor: ",
   "Meta.Category": "Categoría: ",
   "Meta.Description": "Descripción: ",
   "Meta.FileDescription": "Descripción del archivo: ",
   "Meta.HomePage": "Página: ",
-
   "AddMods.FromArchive": "Instalar desde un archivo comprimido",
   "AddMods.FromArchiveSub": "Elige un .zip, .rar o .7z descargado de otra web (Nexus, etc.)",
   "AddMods.FromPak": "Crear un mod con archivos .pak",
@@ -77,14 +72,12 @@
   "AddMods.OpenFolderSub": "Cada carpeta que pongas aquí es un mod",
   "AddMods.ArchiveFilter": "Archivos comprimidos",
   "AddMods.PakFilter": "Paks de Unreal Engine",
-
   "Launch.Title": "¿Cómo quieres abrir el juego?",
   "Launch.ViaSteam": "Abrir con Steam",
   "Launch.ViaSteamSub": "Recomendado. Usa el acceso de Steam para abrir el juego",
   "Launch.ViaExe": "Abrir el ejecutable",
   "Launch.ViaExeSub": "Abre SparkingZERO.exe directamente",
   "Launch.ChangeLater": "Puedes cambiar la forma de abrir el juego en el desplegable que hay junto al botón Jugar",
-
   "Setup.Found": "Juego encontrado en {0}",
   "Setup.NotFound": "No se ha encontrado el juego automáticamente, selecciona SparkingZERO.exe",
   "Setup.SelectExe": "Selecciona {0} en la carpeta del juego",
@@ -95,7 +88,6 @@
   "Setup.BypassError": "No se pudo instalar el bypass de firmas ({0})",
   "Setup.ClickSetup": "Pulsa Configurar antes de empezar",
   "Setup.Again": "El juego ya está configurado en:\n{0}\n\n¿Configurarlo de nuevo?",
-
   "Build.Building": "Montando los mods en el juego...",
   "Build.ManifestError": "No se pudo leer o guardar la lista de archivos instalados ({0})",
   "Build.BackedUp": "Se han movido {0} archivos que no puso Sparking Unverum a la copia de seguridad: {1}",
@@ -111,11 +103,11 @@
   "Build.AddingZeroSpark": "Añadiendo JSON de ZeroSpark: {0}",
   "Build.MissingModLoader": "Algunos mods activados necesitan el SparkingZERO Mod Loader y no está en el perfil",
   "Build.InstallModLoader": "Algunos mods activados necesitan el SparkingZERO Mod Loader (SZModLib y ZeroSpark), pero no está instalado o no está activado.\n\n¿Quieres descargarlo e instalarlo ahora desde GameBanana?",
+  "Build.Summary": "Montaje: {0} archivos enlazados sin copiar, {1} copiados, {2} ya estaban, {3} quitados. Escritura en disco ahorrada: {4}",
   "Build.Finished": "¡Mods montados!",
   "Build.Error": "Error al montar los mods ({0})",
   "Build.Failed": "No se han podido montar los mods, el juego no se abrirá",
   "Build.ManualModsFound": "Hay mods instalados a mano en {0}.\n\nSparking Unverum los moverá a la carpeta Backups al montar. ¿Quieres copiarlos también a tu lista de mods?",
-
   "Download.Title": "Descarga",
   "Download.Downloading": "Descargando {0}...",
   "Download.Progress": "{0}% ({1} de {2})",
@@ -131,7 +123,6 @@
   "Download.ExtractError": "No se pudo descomprimir {0} ({1})",
   "Download.Installed": "{0} instalado en {1}",
   "Download.OneClick": "Instalación con 1 clic recibida desde GameBanana",
-
   "Files.InstallTitle": "Instalar mod",
   "Files.UpdateTitle": "Actualizar mod",
   "Files.ChooseMany": "Marca los archivos que quieres. Todos se instalarán en la misma carpeta.",
@@ -141,20 +132,14 @@
   "Files.DownloadAll": "Descargar todos",
   "Files.NoneSelected": "Marca al menos un archivo para descargar.",
   "Files.Details": "{0} • Subido {1} • {2} descargas",
-
   "Update.Checking": "Buscando actualizaciones de mods...",
   "Update.None": "No hay actualizaciones de mods.",
-  "Update.Done": "¡Búsqueda de actualizaciones terminada!",
   "Update.CheckError": "No se pudo comprobar si hay actualizaciones ({0})",
-  "Update.Available": "¡Hay una actualización de {0}!",
-  "Update.AvailableFor": "Hay una actualización nueva de {0}",
   "Update.Skipped": "Actualización de {0} omitida",
-  "Update.Declined": "Actualización de {0} rechazada por ahora",
   "Update.NoFiles": "{0} tiene una actualización pero no hay archivos para descargar desde GameBanana",
   "Update.Cancelled": "Actualización de {0} cancelada",
   "Update.Updated": "¡{0} actualizado!",
   "Update.Unavailable": "{0} mods ya no están disponibles en GameBanana (borrados por su autor o retirados), no recibirán actualizaciones: {1}",
-
   "AppUpdate.Checking": "Buscando actualizaciones de Sparking Unverum...",
   "AppUpdate.UpToDate": "Sparking Unverum v{0} está al día",
   "AppUpdate.Available": "¡Hay una versión nueva de Sparking Unverum (v{0})!",
@@ -164,12 +149,10 @@
   "AppUpdate.InvalidPackage": "El paquete descargado no es una versión válida de Sparking Unverum",
   "AppUpdate.Cancelled": "Actualización de Sparking Unverum cancelada",
   "AppUpdate.Error": "No se pudo buscar actualizaciones de Sparking Unverum ({0})",
-
   "Changelog.Title": "Cambios de {0}",
   "Changelog.Version": "Actualización: {0}",
   "Changelog.Question": "¿Quieres actualizar?",
   "Changelog.Skip": "Omitir",
-
   "Loadout.Title": "Perfiles de mods",
   "Loadout.AddEnabled": "Nuevo perfil con todo activado",
   "Loadout.AddEnabledSub": "Crea un perfil con todos los mods activados en orden alfabético",
@@ -185,7 +168,6 @@
   "Loadout.DeleteConfirm": "¿Borrar el perfil {0}? Los mods no se borran.",
   "Loadout.CantDeleteLast": "No se puede borrar el único perfil",
   "Loadout.Changed": "Perfil cambiado a {0}",
-
   "Edit.Name": "Nombre",
   "Edit.RenameTitle": "Renombrar {0}",
   "Edit.NewModTitle": "Nuevo mod",
@@ -194,25 +176,20 @@
   "Edit.InvalidChars": "El nombre tiene caracteres no válidos para una carpeta (\\ / : * ? \" < > |)",
   "Edit.Exists": "Ya existe {0}",
   "Edit.RenameError": "No se pudo renombrar ({0})",
-
   "Fetch.Title": "Vincular {0} con GameBanana",
   "Fetch.Url": "Página de GameBanana",
   "Fetch.InvalidUrl": "El enlace debe tener este formato: https://gamebanana.com/mods/123456",
-
   "Paks.Title": "Paks de {0}",
-
   "Alt.InstallDescription": "Este mod se descarga desde otras webs. Elige un enlace para descargarlo y descomprime el archivo en:",
   "Alt.UpdateDescription": "La actualización se descarga desde otras webs. Elige un enlace, borra los archivos antiguos y descomprime la descarga en:",
   "Alt.InstallFetch": "Después, haz clic derecho en el mod > Vincular con GameBanana y usa este enlace:",
   "Alt.UpdateFetch": "Después, haz clic derecho en {0} > Vincular con GameBanana y usa este enlace:",
-
   "Import.Offer": "¿Usabas el Unverum clásico para Sparking! ZERO?\n\n¿Quieres traer tus mods y perfiles desde su carpeta?",
   "Import.SelectFolder": "Selecciona la carpeta del Unverum clásico (donde está Unverum.exe)",
   "Import.NotFound": "No hay mods de Sparking! ZERO ni configuración del Unverum clásico en {0}",
   "Import.SameFolder": "Sparking Unverum ya está usando esa carpeta de mods.",
   "Import.Error": "Error al importar ({0})",
   "Import.Done": "Importados {0} mods y {1} perfiles del Unverum clásico",
-
   "Browser.TypeMods": "Mods",
   "Browser.TypeSounds": "Sonidos",
   "Browser.TypeWips": "En desarrollo",
@@ -248,7 +225,6 @@
   "Browser.Error": "Algo ha fallado: {0}",
   "Browser.NoMods": "No se ha encontrado ningún mod.",
   "Browser.AllFiltered": "Los mods de esta página están ocultos por tus filtros. Prueba la página siguiente o cambia los filtros de abajo.",
-
   "Settings.Title": "Ajustes",
   "Settings.General": "General",
   "Settings.Language": "Idioma",
@@ -272,7 +248,6 @@
   "Settings.NotFound": "Todavía no existe: {0}",
   "Settings.About": "Acerca de",
   "Settings.AboutText": "Sparking Unverum v{0}, gestor de mods para DRAGON BALL Sparking! ZERO, por Majin.",
-
   "Time.Minute": "hace {0} minuto",
   "Time.Minutes": "hace {0} minutos",
   "Time.Hour": "hace {0} hora",
@@ -284,5 +259,21 @@
   "Time.Month": "hace {0} mes",
   "Time.Months": "hace {0} meses",
   "Time.Year": "hace {0} año",
-  "Time.Years": "hace {0} años"
+  "Time.Years": "hace {0} años",
+  "Update.Found": "¡Hay {0} actualizaciones de mods!",
+  "Update.Installed": "Actualizados {0} de {1} mods",
+  "Main.StateUpdate": "Hay una actualización de este mod",
+  "Main.StateUnavailable": "Este mod ya no está disponible en GameBanana",
+  "Browser.Installed": "INSTALADO",
+  "Updates.Title": "Actualizaciones de mods",
+  "Updates.Header": "{0} mods tienen actualización",
+  "Updates.SelectAll": "Marcar todos",
+  "Updates.UpdateSelected": "Actualizar marcados",
+  "Updates.SkipSelected": "Omitir marcados",
+  "Updates.SkipTooltip": "No descarga nada y no vuelve a avisar de estas versiones",
+  "Updates.Later": "Más tarde",
+  "Updates.ManualOnly": "Esta actualización se descarga desde otra web: te enseñaré los enlaces",
+  "Updates.NoneSelected": "Marca al menos un mod.",
+  "Updates.HeaderOne": "1 mod tiene actualización",
+  "Build.Relinked": "Se han convertido {0} copias antiguas en enlaces: {1} de espacio liberado en el disco"
 }

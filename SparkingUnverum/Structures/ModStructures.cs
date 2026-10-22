@@ -10,6 +10,16 @@ namespace SparkingUnverum
         public string name { get; set; }
         public bool enabled { get; set; }
         public Dictionary<string, bool> paks { get; set; }
+        // Update available or gone from GameBanana, shown with an icon in the mod list
+        [JsonIgnore]
+        public ModState State => ModUpdater.GetState(name);
+        [JsonIgnore]
+        public string StateTooltip => State switch
+        {
+            ModState.UpdateAvailable => Loc.T("Main.StateUpdate"),
+            ModState.Unavailable => Loc.T("Main.StateUnavailable"),
+            _ => null
+        };
     }
     // mod.json, same fields as the classic Unverum so mod folders can be shared between both
     public class Metadata
@@ -24,6 +34,8 @@ namespace SparkingUnverum
         public string filedescription { get; set; }
         public Uri homepage { get; set; }
         public DateTime? lastupdate { get; set; }
+        // Sparking Unverum only: GameBanana files that were downloaded
+        public List<string> files { get; set; }
     }
     public class Config
     {

@@ -20,15 +20,18 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - Importa tus mods y perfiles de Sparking! ZERO desde el Unverum clásico.
 - En español e inglés.
 - Se actualiza solo desde las releases de este repositorio. El Unverum clásico ya no puede sobrescribirlo.
+- **Cuida tu disco**: al pulsar Jugar solo escribe lo que ha cambiado, y si el juego está en el mismo disco los paks se enlazan sin copiarse.
+- Todas las actualizaciones de mods en una sola ventana, con iconos en la lista para los mods actualizables o borrados de GameBanana.
+- Los mods borrados van a la papelera de reciclaje.
 
 ## Requisitos
 
 - Windows 10/11 de 64 bits.
-- [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0). Si no lo tienes, Windows te lo pedirá al abrir el programa.
+- Descarga `SparkingUnverum-vX.Y.Z-standalone.zip` si no quieres instalar nada más. La versión ligera, `SparkingUnverum-vX.Y.Z.zip`, necesita el [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## Instalación
 
-1. Descarga `SparkingUnverum-vX.Y.Z.zip` de [Releases](https://github.com/MajinSander/Sparking-Unverum/releases).
+1. Descarga el zip de [Releases](https://github.com/MajinSander/Sparking-Unverum/releases).
 2. Descomprímelo en una carpeta propia, por ejemplo `C:\SparkingUnverum`. Mejor fuera de `Archivos de programa`.
 3. Abre `SparkingUnverum.exe`. Encontrará el juego solo; si no, pulsa **Configurar** y elige `SparkingZERO.exe`.
 
@@ -55,8 +58,10 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - Imports Sparking! ZERO mods and loadouts from the classic Unverum.
 - Spanish and English.
 - Self-updates from this repository's releases only.
+- Easy on your disk: Play only writes what changed and hard links paks when the game is on the same drive.
+- All mod updates in one window, icons for updatable or deleted mods, deleted mods go to the Recycle Bin.
 
-**Requirements:** Windows 10/11 x64 and the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
+**Requirements:** Windows 10/11 x64. The `-standalone` zip needs nothing else; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 **Install:** download the zip from [Releases](https://github.com/MajinSander/Sparking-Unverum/releases), extract it to its own folder and run `SparkingUnverum.exe`.
 
@@ -66,7 +71,7 @@ Browse and download GameBanana mods inside the app, install them with the websit
 dotnet build SparkingUnverum.sln -c Release
 ```
 
-`build.ps1` creates the release zip.
+`build.ps1` creates both release zips.
 
 ## License
 

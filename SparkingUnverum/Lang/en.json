@@ -4,10 +4,8 @@
   "Common.Cancel": "Cancel",
   "Common.Close": "Close",
   "Common.Confirm": "Confirm",
-
   "App.AlreadyRunning": "Sparking Unverum is already running.",
   "App.UnhandledException": "An unexpected error occurred:\n{0}\n\nInner error:\n{1}\n\nDetails:\n{2}",
-
   "Log.Info": "INFO",
   "Log.Warning": "WARNING",
   "Log.Error": "ERROR",
@@ -18,7 +16,6 @@
   "Log.ModAdded": "Added {0}",
   "Log.ModRemoved": "Removed {0}",
   "Log.SkippedItem": "Skipped a {0} that GameBanana sent incomplete ({1})",
-
   "Main.ManageTab": "My Mods",
   "Main.BrowseTab": "Mod Store",
   "Main.Settings": "Settings",
@@ -50,9 +47,9 @@
   "Main.LaunchError": "Couldn't start {0} ({1})",
   "Main.OpenError": "Couldn't open {0} ({1})",
   "Main.DeleteTitle": "Delete mods",
-  "Main.DeleteConfirm": "Are you sure you want to delete {0}?\nThis can't be undone.",
-  "Main.DeleteConfirmMany": "Are you sure you want to delete {0} mods?\nThis can't be undone.",
-  "Main.Deleted": "Deleted {0}",
+  "Main.DeleteConfirm": "Delete {0}?\nIt will be sent to the Recycle Bin.",
+  "Main.DeleteConfirmMany": "Delete {0} mods?\nThey will be sent to the Recycle Bin.",
+  "Main.Deleted": "{0} sent to the Recycle Bin",
   "Main.DeleteError": "Couldn't delete {0} ({1})",
   "Main.NoPage": "{0} isn't linked to GameBanana",
   "Main.ModCreated": "Created mod {0}",
@@ -60,13 +57,11 @@
   "Main.NoSearchResults": "No mods found matching {0}",
   "Main.SortConfirm": "Sort all mods alphabetically?",
   "Main.GroupConfirm": "Move all enabled mods to the top of the list?",
-
   "Meta.Submitter": "Author: ",
   "Meta.Category": "Category: ",
   "Meta.Description": "Description: ",
   "Meta.FileDescription": "File description: ",
   "Meta.HomePage": "Page: ",
-
   "AddMods.FromArchive": "Install from an archive",
   "AddMods.FromArchiveSub": "Pick a .zip, .rar or .7z downloaded from another site (Nexus, etc.)",
   "AddMods.FromPak": "Create a mod from .pak files",
@@ -77,14 +72,12 @@
   "AddMods.OpenFolderSub": "Every folder you put here is a mod",
   "AddMods.ArchiveFilter": "Archives",
   "AddMods.PakFilter": "Unreal Engine paks",
-
   "Launch.Title": "How do you want to start the game?",
   "Launch.ViaSteam": "Start through Steam",
   "Launch.ViaSteamSub": "Recommended. Uses the Steam shortcut to start the game",
   "Launch.ViaExe": "Start the executable",
   "Launch.ViaExeSub": "Starts SparkingZERO.exe directly",
   "Launch.ChangeLater": "You can change how the game starts with the dropdown next to the Play button",
-
   "Setup.Found": "Game found at {0}",
   "Setup.NotFound": "Couldn't find the game automatically, select SparkingZERO.exe",
   "Setup.SelectExe": "Select {0} in the game folder",
@@ -95,7 +88,6 @@
   "Setup.BypassError": "Couldn't install the signature bypass ({0})",
   "Setup.ClickSetup": "Please click Setup before starting",
   "Setup.Again": "The game is already set up at:\n{0}\n\nSet it up again?",
-
   "Build.Building": "Installing the mods into the game...",
   "Build.ManifestError": "Couldn't read or save the list of installed files ({0})",
   "Build.BackedUp": "Moved {0} files that Sparking Unverum didn't put there to the backup: {1}",
@@ -111,11 +103,11 @@
   "Build.AddingZeroSpark": "Adding ZeroSpark JSON: {0}",
   "Build.MissingModLoader": "Some enabled mods need the SparkingZERO Mod Loader and it isn't in the loadout",
   "Build.InstallModLoader": "Some enabled mods need the SparkingZERO Mod Loader (SZModLib and ZeroSpark), but it isn't installed or enabled.\n\nDo you want to download and install it from GameBanana now?",
+  "Build.Summary": "Install: {0} files linked without copying, {1} copied, {2} already in place, {3} removed. Disk writes saved: {4}",
   "Build.Finished": "Mods installed!",
   "Build.Error": "Error while installing the mods ({0})",
   "Build.Failed": "Couldn't install the mods, the game won't be started",
   "Build.ManualModsFound": "There are mods installed by hand in {0}.\n\nSparking Unverum will move them to the Backups folder. Do you also want to copy them to your mod list?",
-
   "Download.Title": "Download",
   "Download.Downloading": "Downloading {0}...",
   "Download.Progress": "{0}% ({1} of {2})",
@@ -131,7 +123,6 @@
   "Download.ExtractError": "Couldn't extract {0} ({1})",
   "Download.Installed": "{0} installed in {1}",
   "Download.OneClick": "Received a 1-click install from GameBanana",
-
   "Files.InstallTitle": "Install mod",
   "Files.UpdateTitle": "Update mod",
   "Files.ChooseMany": "Tick the files you want. All of them go into the same folder.",
@@ -141,20 +132,14 @@
   "Files.DownloadAll": "Download all",
   "Files.NoneSelected": "Tick at least one file to download.",
   "Files.Details": "{0} • Uploaded {1} • {2} downloads",
-
   "Update.Checking": "Checking for mod updates...",
   "Update.None": "No mod updates available.",
-  "Update.Done": "Done checking for updates!",
   "Update.CheckError": "Couldn't check for updates ({0})",
-  "Update.Available": "An update is available for {0}!",
-  "Update.AvailableFor": "A new update is available for {0}",
   "Update.Skipped": "Skipped the update for {0}",
-  "Update.Declined": "Declined the update for {0} for now",
   "Update.NoFiles": "{0} has an update but no files can be downloaded from GameBanana",
   "Update.Cancelled": "Cancelled the update for {0}",
   "Update.Updated": "{0} updated!",
   "Update.Unavailable": "{0} mods aren't available on GameBanana anymore (deleted by their author or removed), they won't get updates: {1}",
-
   "AppUpdate.Checking": "Checking for Sparking Unverum updates...",
   "AppUpdate.UpToDate": "Sparking Unverum v{0} is up to date",
   "AppUpdate.Available": "A new version of Sparking Unverum is available (v{0})!",
@@ -164,12 +149,10 @@
   "AppUpdate.InvalidPackage": "The downloaded package isn't a valid Sparking Unverum version",
   "AppUpdate.Cancelled": "Sparking Unverum update cancelled",
   "AppUpdate.Error": "Couldn't check for Sparking Unverum updates ({0})",
-
   "Changelog.Title": "{0} changelog",
   "Changelog.Version": "Update: {0}",
   "Changelog.Question": "Would you like to update?",
   "Changelog.Skip": "Skip",
-
   "Loadout.Title": "Mod loadouts",
   "Loadout.AddEnabled": "New loadout with everything enabled",
   "Loadout.AddEnabledSub": "Creates a loadout with every mod enabled in alphabetical order",
@@ -185,7 +168,6 @@
   "Loadout.DeleteConfirm": "Delete the loadout {0}? The mods are kept.",
   "Loadout.CantDeleteLast": "The only loadout can't be deleted",
   "Loadout.Changed": "Loadout changed to {0}",
-
   "Edit.Name": "Name",
   "Edit.RenameTitle": "Rename {0}",
   "Edit.NewModTitle": "New mod",
@@ -194,25 +176,20 @@
   "Edit.InvalidChars": "The name has characters that can't be used in a folder (\\ / : * ? \" < > |)",
   "Edit.Exists": "{0} already exists",
   "Edit.RenameError": "Couldn't rename ({0})",
-
   "Fetch.Title": "Link {0} to GameBanana",
   "Fetch.Url": "GameBanana page",
   "Fetch.InvalidUrl": "The link must look like this: https://gamebanana.com/mods/123456",
-
   "Paks.Title": "Paks of {0}",
-
   "Alt.InstallDescription": "This mod is downloaded from other sites. Pick a link to download it and extract the archive into:",
   "Alt.UpdateDescription": "The update is downloaded from other sites. Pick a link, delete the old files and extract the download into:",
   "Alt.InstallFetch": "Then right click the mod > Link to GameBanana and use this link:",
   "Alt.UpdateFetch": "Then right click {0} > Link to GameBanana and use this link:",
-
   "Import.Offer": "Were you using the classic Unverum for Sparking! ZERO?\n\nDo you want to bring your mods and loadouts from its folder?",
   "Import.SelectFolder": "Select the classic Unverum folder (where Unverum.exe is)",
   "Import.NotFound": "There are no Sparking! ZERO mods or classic Unverum settings in {0}",
   "Import.SameFolder": "Sparking Unverum already uses that mods folder.",
   "Import.Error": "Error while importing ({0})",
   "Import.Done": "Imported {0} mods and {1} loadouts from the classic Unverum",
-
   "Browser.TypeMods": "Mods",
   "Browser.TypeSounds": "Sounds",
   "Browser.TypeWips": "WiPs",
@@ -248,7 +225,6 @@
   "Browser.Error": "Something went wrong: {0}",
   "Browser.NoMods": "No mods found.",
   "Browser.AllFiltered": "The mods of this page are hidden by your filters. Try the next page or change the filters below.",
-
   "Settings.Title": "Settings",
   "Settings.General": "General",
   "Settings.Language": "Language",
@@ -272,7 +248,6 @@
   "Settings.NotFound": "It doesn't exist yet: {0}",
   "Settings.About": "About",
   "Settings.AboutText": "Sparking Unverum v{0}, mod manager for DRAGON BALL Sparking! ZERO, by Majin.",
-
   "Time.Minute": "{0} minute ago",
   "Time.Minutes": "{0} minutes ago",
   "Time.Hour": "{0} hour ago",
@@ -284,5 +259,21 @@
   "Time.Month": "{0} month ago",
   "Time.Months": "{0} months ago",
   "Time.Year": "{0} year ago",
-  "Time.Years": "{0} years ago"
+  "Time.Years": "{0} years ago",
+  "Update.Found": "{0} mod updates are available!",
+  "Update.Installed": "Updated {0} of {1} mods",
+  "Main.StateUpdate": "An update is available for this mod",
+  "Main.StateUnavailable": "This mod isn't available on GameBanana anymore",
+  "Browser.Installed": "INSTALLED",
+  "Updates.Title": "Mod updates",
+  "Updates.Header": "{0} mods have an update",
+  "Updates.SelectAll": "Select all",
+  "Updates.UpdateSelected": "Update selected",
+  "Updates.SkipSelected": "Skip selected",
+  "Updates.SkipTooltip": "Doesn't download anything and won't ask again about these versions",
+  "Updates.Later": "Later",
+  "Updates.ManualOnly": "This update is downloaded from another site: the links will be shown",
+  "Updates.NoneSelected": "Select at least one mod.",
+  "Updates.HeaderOne": "1 mod has an update",
+  "Build.Relinked": "Turned {0} old copies into links: {1} of disk space freed"
 }

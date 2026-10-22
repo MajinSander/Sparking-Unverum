@@ -68,6 +68,23 @@
                         </Rectangle.OpacityMask>
                     </Rectangle>
                     <fa5:ImageAwesome Foreground="{StaticResource AccentBrush}" Grid.Row="0" Icon="Solid_Spinner" Height="50" VerticalAlignment="Center" HorizontalAlignment="Center" Spin="True" SpinDuration="2"/>
+                    <Border Grid.Row="0" Panel.ZIndex="5" Margin="10,16,0,0" Padding="8,3" CornerRadius="3" Background="{StaticResource AccentBrush}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <fa5:ImageAwesome Icon="Solid_Check" Height="11" Foreground="White" Margin="0,0,5,0"/>
+                            <TextBlock Text="{l:Tr Browser.Installed}" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
 
                     <TextBlock Margin="5" Grid.Row="1" FontWeight="Medium" TextTrimming="WordEllipsis" VerticalAlignment="Center" Foreground="#f2f2f2" Text="{Binding Path=Title}" ToolTip="{Binding Path=Title}"/>
                     <StackPanel Grid.Row="2" Margin="10,-5,10,5" Orientation="Horizontal">
@@ -306,6 +323,38 @@
                                     </DataGridCheckBoxColumn.CellStyle>
                                 </DataGridCheckBoxColumn>
                                 <DataGridTextColumn Header="{l:Tr Main.NameColumn}" Binding="{Binding name, Mode=TwoWay}" IsReadOnly="True" Width="*"/>
+                                <DataGridTemplateColumn Header="" Width="28" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Background="Transparent" ToolTip="{Binding StateTooltip}">
+                                                <fa5:ImageAwesome Icon="Solid_ArrowCircleUp" Height="13" Foreground="{StaticResource AccentBrush}">
+                                                    <fa5:ImageAwesome.Style>
+                                                        <Style TargetType="fa5:ImageAwesome">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding State}" Value="UpdateAvailable">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </fa5:ImageAwesome.Style>
+                                                </fa5:ImageAwesome>
+                                                <fa5:ImageAwesome Icon="Solid_ExclamationTriangle" Height="12" Foreground="#909090">
+                                                    <fa5:ImageAwesome.Style>
+                                                        <Style TargetType="fa5:ImageAwesome">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding State}" Value="Unavailable">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </fa5:ImageAwesome.Style>
+                                                </fa5:ImageAwesome>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                         <GridSplitter Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="10" Background="Transparent"/>

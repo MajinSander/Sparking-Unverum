@@ -138,19 +138,43 @@ namespace SparkingUnverum
             SettingsButton.IsEnabled = !value;
         }
 
+        // Looks for mod updates and shows them all in one window
         private async Task CheckModUpdates()
         {
             Global.logger.WriteLine(Loc.T("Update.Checking"), LoggerType.Info);
             SetBusy(true);
+            UpdateCheckResult result;
             try
             {
-                await ModUpdater.CheckForUpdates();
+                result = await ModUpdater.CheckForUpdates();
             }
             finally
             {
                 SetBusy(false);
                 Refresh();
+                ModGrid.Items.Refresh();
             }
+            if (result.Pending.Count == 0)
+                return;
+            var window = new UpdatesWindow(result.Pending) { Owner = this };
+            window.ShowDialog();
+            if (window.Choice == UpdatesChoice.Skip)
+                ModUpdater.Skip(window.Selected);
+            else if (window.Choice == UpdatesChoice.Update)
+            {
+                SetBusy(true);
+                try
+                {
+                    var installed = await ModUpdater.Apply(window.Selected);
+                    Global.logger.WriteLine(Loc.T("Update.Installed", installed, window.Selected.Count), LoggerType.Info);
+                }
+                finally
+                {
+                    SetBusy(false);
+                }
+            }
+            Refresh();
+            ModGrid.Items.Refresh();
         }
 
         private void OnModified(object sender, FileSystemEventArgs e)
@@ -339,8 +363,7 @@ namespace SparkingUnverum
             else if (Directory.Exists(Path.Combine(paths.Content, "CriWareData")))
                 sound = Path.Combine(paths.Content, "CriWareData");
             Setup.InstallBypass(paths);
-            if (!ModLoader.Restart(paths, movies, splash, sound))
-                return null;
+            // Only what changed since the last time is written to the game
             return ModLoader.Build(paths, mods, movies, splash, sound);
         }
 
@@ -422,7 +445,9 @@ namespace SparkingUnverum
             {
                 try
                 {
-                    await Task.Run(() => Directory.Delete(Path.Combine(Global.ModsPath, mod.name), true));
+                    // To the Windows recycle bin, so a mistake can be undone
+                    await Task.Run(() => Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(Path.Combine(Global.ModsPath, mod.name),
+                        Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin));
                     Global.logger.WriteLine(Loc.T("Main.Deleted", mod.name), LoggerType.Info);
                 }
                 catch (Exception ex)
@@ -1095,6 +1120,9 @@ namespace SparkingUnverum
                 return;
 
             var visible = ApplyLocalFilters(records, type);
+            var installed = InstalledSubmissions();
+            foreach (var record in visible)
+                record.IsInstalled = installed.Contains((record.Model ?? "Mod", record.Id));
             FeedBox.ItemsSource = visible;
             filterSelect = true;
             PageBox.ItemsSource = Enumerable.Range(1, totalPages).ToList();
@@ -1115,6 +1143,21 @@ namespace SparkingUnverum
                 BrowserMessage.Text = records.Count > 0 ? Loc.T("Browser.AllFiltered") : Loc.T("Browser.NoMods");
             }
             SetBrowserControls(true);
+        }
+
+        // (model, id) of every installed mod that came from GameBanana, to mark them in the store
+        private static HashSet<(string, long)> InstalledSubmissions()
+        {
+            var result = new HashSet<(string, long)>();
+            if (!Directory.Exists(Global.ModsPath))
+                return result;
+            foreach (var folder in Directory.GetDirectories(Global.ModsPath))
+            {
+                var metadata = ModDownloader.ReadMetadata(folder);
+                if (metadata?.homepage != null && GameBananaApi.TryParseProfileUrl(metadata.homepage.ToString(), out var model, out var id))
+                    result.Add((model, id));
+            }
+            return result;
         }
 
         private List<GameBananaRecord> ApplyLocalFilters(List<GameBananaRecord> records, TypeFilter type)
@@ -1266,7 +1309,11 @@ namespace SparkingUnverum
             {
                 var folder = await new ModDownloader().BrowserDownload(record);
                 if (folder != null)
+                {
                     Refresh();
+                    record.IsInstalled = true;
+                    FeedBox.Items.Refresh();
+                }
             }
             finally
             {

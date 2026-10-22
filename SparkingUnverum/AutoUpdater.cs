@@ -87,10 +87,12 @@ namespace SparkingUnverum
                 var prerelease = release.TryGetProperty("prerelease", out var pre) && pre.GetBoolean();
                 if ((prerelease || version.IsPrerelease) && current != null && !current.IsPrerelease)
                     continue;
+                // Same kind of package as the installed one (standalone carries .NET inside)
+                var standalone = File.Exists(Path.Combine(Global.assemblyLocation, "coreclr.dll"));
                 foreach (var asset in release.GetProperty("assets").EnumerateArray())
                 {
                     var name = asset.GetProperty("name").GetString();
-                    if (!AssetName.IsMatch(name ?? string.Empty))
+                    if (!AssetName.IsMatch(name ?? string.Empty) || name.Contains("-standalone", StringComparison.OrdinalIgnoreCase) != standalone)
                         continue;
                     releases.Add(new Release
                     {
