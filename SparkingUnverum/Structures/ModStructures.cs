@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace SparkingUnverum
 {
-    public class Mod
+    public class Mod : System.ComponentModel.INotifyPropertyChanged
     {
         public string name { get; set; }
         public bool enabled { get; set; }
@@ -20,6 +20,18 @@ namespace SparkingUnverum
             ModState.Unavailable => Loc.T("Main.StateUnavailable"),
             _ => null
         };
+        [JsonIgnore]
+        public string SizeText => ModInfo.Size(name) is long size ? StringConverters.FormatSize(size) : string.Empty;
+        [JsonIgnore]
+        public long SizeBytes => ModInfo.Size(name) ?? 0;
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        // Size, state and link are shown from caches, this tells the list to read them again
+        public void InfoChanged()
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(SizeText)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(State)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(StateTooltip)));
+        }
     }
     // mod.json, same fields as the classic Unverum so mod folders can be shared between both
     public class Metadata

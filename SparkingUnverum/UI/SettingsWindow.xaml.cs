@@ -68,8 +68,18 @@ namespace SparkingUnverum.UI
                 ImportedMods = true;
         }
 
+        private void Backups_Click(object sender, RoutedEventArgs e)
+        {
+            new BackupsWindow { Owner = this }.ShowDialog();
+        }
+
         private async void RemoveMods_Click(object sender, RoutedEventArgs e)
         {
+            if (GameProcess.IsRunning())
+            {
+                MessageBox.Show(Loc.T("Game.Running", Loc.T("Game.ActionRemove")), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             var paths = GamePaths.Current;
             if (paths == null)
             {

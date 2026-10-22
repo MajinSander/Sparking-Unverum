@@ -98,6 +98,34 @@ namespace SparkingUnverum
             return restored;
         }
 
+        // Same bytes in both files
+        public static bool SameContent(string a, string b)
+        {
+            var infoA = new FileInfo(a);
+            var infoB = new FileInfo(b);
+            if (infoA.Length != infoB.Length)
+                return false;
+            using var streamA = infoA.OpenRead();
+            using var streamB = infoB.OpenRead();
+            var bufferA = new byte[81920];
+            var bufferB = new byte[81920];
+            int read;
+            while ((read = streamA.Read(bufferA, 0, bufferA.Length)) > 0)
+            {
+                var readB = 0;
+                while (readB < read)
+                {
+                    var n = streamB.Read(bufferB, readB, read - readB);
+                    if (n == 0)
+                        return false;
+                    readB += n;
+                }
+                if (!bufferA.AsSpan(0, read).SequenceEqual(bufferB.AsSpan(0, read)))
+                    return false;
+            }
+            return true;
+        }
+
         public static void CopyDirectory(string source, string destination)
         {
             Directory.CreateDirectory(destination);

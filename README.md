@@ -25,6 +25,9 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - Los mods borrados van a la papelera de reciclaje.
 - **La configuración de tus mods se conserva**: las carpetas de plugins se enlazan con el mod, así que lo que guardan con el juego abierto (por ejemplo CSS Organizer) se queda en el mod, también al actualizarlo.
 - Los mods con varias descargas que el Unverum clásico repartió en varias carpetas se pueden agrupar en uno o mantener separados, y en ambos casos se actualizan bien.
+- **Mis mods** muestra lo que ocupa cada mod y filtra por activos, desactivados, con actualización, no disponibles o sin vincular a GameBanana.
+- **Libera espacio de las copias de seguridad**: detecta qué archivos de `Backups` ya están idénticos en tus mods y borra solo esos.
+- No toca los mods mientras el juego está abierto.
 
 ## Requisitos
 
@@ -42,7 +45,7 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - **Tienda de mods**: busca un mod y pulsa *Descargar*.
 - **Mis mods**: marca los mods que quieras y arrástralos para ordenarlos; los de arriba tienen prioridad. Después pulsa **Jugar**.
 - **Perfiles**: guarda distintas combinaciones de mods.
-- **Ajustes**: idioma, actualizaciones, importar desde el Unverum clásico y quitar todos los mods del juego.
+- **Ajustes**: idioma, actualizaciones, importar desde el Unverum clásico, agrupar mods, liberar espacio y quitar todos los mods del juego.
 
 ---
 
@@ -64,6 +67,9 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - All mod updates in one window, icons for updatable or deleted mods, deleted mods go to the Recycle Bin.
 - Mod settings are kept: plugin folders are linked to the mod, so what they save while the game runs (like CSS Organizer) stays in the mod, even after updating it.
 - Mods with several downloads that the classic Unverum split into several folders can be merged into one or kept separate, both update correctly.
+- My mods shows the size of each mod and filters by enabled, disabled, updatable, unavailable or not linked to GameBanana.
+- Frees space in `Backups` by deleting only the files that are already identical in your mods.
+- Doesn't touch the mods while the game is running.
 
 **Requirements:** Windows 10/11 x64. The `-standalone` zip needs nothing else; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 

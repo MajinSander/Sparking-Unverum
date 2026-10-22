@@ -97,6 +97,9 @@ namespace SparkingUnverum
                 Setup.InstallBypass(GamePaths.Current);
             OnFirstOpen();
             OfferClassicImport();
+            var backups = await Task.Run(BackupCleaner.TotalSize);
+            if (backups > 500L * 1024 * 1024)
+                Global.logger.WriteLine(Loc.T("Backups.Hint", StringConverters.FormatSize(backups)), LoggerType.Info);
             var groups = ModMerger.Find(false);
             if (groups.Count > 0)
                 Global.logger.WriteLine(Loc.T("Merge.Hint", groups.Count, string.Join(", ", groups.Select(g => g.Title))), LoggerType.Info);
@@ -156,6 +159,7 @@ namespace SparkingUnverum
                 SetBusy(false);
                 Refresh();
                 ModGrid.Items.Refresh();
+                ApplyModFilter(true);
             }
             if (result.Pending.Count == 0)
                 return;
@@ -163,7 +167,7 @@ namespace SparkingUnverum
             window.ShowDialog();
             if (window.Choice == UpdatesChoice.Skip)
                 ModUpdater.Skip(window.Selected);
-            else if (window.Choice == UpdatesChoice.Update)
+            else if (window.Choice == UpdatesChoice.Update && !GameIsRunning("Game.ActionUpdate"))
             {
                 SetBusy(true);
                 try
@@ -178,6 +182,7 @@ namespace SparkingUnverum
             }
             Refresh();
             ModGrid.Items.Refresh();
+            ApplyModFilter(true);
         }
 
         private void OnModified(object sender, FileSystemEventArgs e)
@@ -242,10 +247,70 @@ namespace SparkingUnverum
 
         private async void UpdateStats()
         {
-            var count = Global.ModList.Count;
-            var enabled = Global.ModList.Count(x => x.enabled);
-            var size = await Task.Run(() => new DirectoryInfo(Global.ModsPath).GetDirectorySize());
-            Stats.Text = Loc.T("Main.Stats", count, enabled, StringConverters.FormatSize(size), App.Version);
+            await ModInfo.Scan();
+            UpdateStatsText();
+            foreach (var mod in Global.ModList)
+                mod.InfoChanged();
+            // The unlinked filter depends on what was just read
+            ApplyModFilter(ModFilterBox.SelectedIndex == (int)ModFilter.Unlinked);
+        }
+
+        // Counters only, nothing that redraws the list (checkboxes call it while rows are being created)
+        private void UpdateStatsText()
+        {
+            Stats.Text = Loc.T("Main.Stats", Global.ModList.Count, Global.ModList.Count(x => x.enabled), StringConverters.FormatSize(ModInfo.Total), App.Version);
+        }
+
+        private enum ModFilter
+        {
+            All,
+            Enabled,
+            Disabled,
+            Updates,
+            Unavailable,
+            Unlinked
+        }
+
+        // Shows only some mods. The order can't be changed by dragging while a filter is on
+        private ModFilter appliedFilter = ModFilter.All;
+        private object appliedList;
+        // Only when something changed: refreshing the view recreates the rows
+        private void ApplyModFilter(bool force = false)
+        {
+            if (Global.ModList == null || ModFilterBox == null)
+                return;
+            var filter = (ModFilter)Math.Max(0, ModFilterBox.SelectedIndex);
+            if (!force && filter == appliedFilter && ReferenceEquals(appliedList, Global.ModList))
+                return;
+            appliedFilter = filter;
+            appliedList = Global.ModList;
+            var view = System.Windows.Data.CollectionViewSource.GetDefaultView(Global.ModList);
+            view.Filter = filter == ModFilter.All ? null : item => item is Mod mod && filter switch
+            {
+                ModFilter.Enabled => mod.enabled,
+                ModFilter.Disabled => !mod.enabled,
+                ModFilter.Updates => mod.State == ModState.UpdateAvailable,
+                ModFilter.Unavailable => mod.State == ModState.Unavailable,
+                ModFilter.Unlinked => !ModInfo.IsLinked(mod.name),
+                _ => true
+            };
+            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDragSource(ModGrid, filter == ModFilter.All);
+            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDropTarget(ModGrid, filter == ModFilter.All);
+        }
+
+        private void ModFilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsLoaded)
+                ApplyModFilter(true);
+        }
+
+        // Files of the mods are in use while the game runs
+        private bool GameIsRunning(string actionKey)
+        {
+            if (!GameProcess.IsRunning())
+                return false;
+            MessageBox.Show(Loc.T("Game.Running", Loc.T(actionKey)), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+            return true;
         }
 
         public void EnableMod(string name)
@@ -267,7 +332,7 @@ namespace SparkingUnverum
             {
                 mod.enabled = true;
                 Global.UpdateConfig();
-                UpdateStats();
+                UpdateStatsText();
             }
         }
         private void OnUnchecked(object sender, RoutedEventArgs e)
@@ -276,7 +341,7 @@ namespace SparkingUnverum
             {
                 mod.enabled = false;
                 Global.UpdateConfig();
-                UpdateStats();
+                UpdateStatsText();
             }
         }
         // Triggered when priority is switched on drag and drop
@@ -300,6 +365,11 @@ namespace SparkingUnverum
             if (!Setup.IsComplete)
             {
                 Global.logger.WriteLine(Loc.T("Setup.ClickSetup"), LoggerType.Warning);
+                return;
+            }
+            if (GameProcess.IsRunning())
+            {
+                MessageBox.Show(Loc.T("Game.RunningPlay"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             SetBusy(true);
@@ -419,6 +489,8 @@ namespace SparkingUnverum
         // Merges the folders of a mod with several downloads into one entry
         public async Task<bool> MergeGroup(DuplicateGroup group)
         {
+            if (GameIsRunning("Game.ActionMerge"))
+                return false;
             ModsWatcher.EnableRaisingEvents = false;
             try
             {
@@ -953,6 +1025,8 @@ namespace SparkingUnverum
             if (sender is not DataGridColumnHeader header || header.Column == null || busy)
                 return;
             List<Mod> sorted;
+            if (header.Column.DisplayIndex > 1)
+                return;
             if (header.Column.DisplayIndex == 1)
             {
                 if (MessageBox.Show(Loc.T("Main.SortConfirm"), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)

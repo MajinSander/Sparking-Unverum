@@ -125,6 +125,11 @@ namespace SparkingUnverum
                     return null;
                 if (answer == MessageBoxResult.Yes)
                 {
+                    if (GameProcess.IsRunning())
+                    {
+                        MessageBox.Show(Loc.T("Game.Running", Loc.T("Game.ActionUpdate")), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return null;
+                    }
                     folderName = existing;
                     replace = true;
                 }
