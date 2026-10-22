@@ -58,6 +58,12 @@
                 <TextBlock Text="{l:Tr Settings.ImportClassic}"/>
             </StackPanel>
         </Button>
+        <Button Style="{StaticResource SettingButton}" Click="Merge_Click">
+            <StackPanel Orientation="Horizontal">
+                <fa5:ImageAwesome Icon="Solid_ObjectGroup" Height="14" Foreground="#f2f2f2" Margin="0,0,8,0"/>
+                <TextBlock Text="{l:Tr Settings.Merge}"/>
+            </StackPanel>
+        </Button>
         <Button Style="{StaticResource SettingButton}" Click="RemoveMods_Click">
             <StackPanel Orientation="Horizontal">
                 <fa5:ImageAwesome Icon="Solid_Eraser" Height="14" Foreground="#f2f2f2" Margin="0,0,8,0"/>

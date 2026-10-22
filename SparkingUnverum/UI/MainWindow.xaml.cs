@@ -97,6 +97,9 @@ namespace SparkingUnverum
                 Setup.InstallBypass(GamePaths.Current);
             OnFirstOpen();
             OfferClassicImport();
+            var groups = ModMerger.Find(false);
+            if (groups.Count > 0)
+                Global.logger.WriteLine(Loc.T("Merge.Hint", groups.Count, string.Join(", ", groups.Select(g => g.Title))), LoggerType.Info);
 
             // First Sparking Unverum itself, then the mods, so their questions don't overlap
             if (checkAppUpdate && Global.config.CheckAppUpdates && await AutoUpdater.CheckForUpdate(true))
@@ -402,7 +405,7 @@ namespace SparkingUnverum
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            var settings = new SettingsWindow { Owner = this };
+            var settings = new SettingsWindow { Owner = this, Merge = MergeGroup };
             settings.ShowDialog();
             if (settings.ImportedMods)
             {
@@ -411,6 +414,32 @@ namespace SparkingUnverum
             }
             if (settings.CheckAppUpdate)
                 CheckAppUpdate();
+        }
+
+        // Merges the folders of a mod with several downloads into one entry
+        public async Task<bool> MergeGroup(DuplicateGroup group)
+        {
+            ModsWatcher.EnableRaisingEvents = false;
+            try
+            {
+                var name = await Task.Run(() => ModMerger.MergeFiles(group));
+                ModMerger.MergeLoadouts(group, name);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Global.logger.WriteLine(Loc.T("Merge.Error", group.Title, e.Message), LoggerType.Error);
+                MessageBox.Show(Loc.T("Merge.Error", group.Title, e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            finally
+            {
+                ModsWatcher.EnableRaisingEvents = true;
+                RefreshAll();
+                Refresh();
+                ModGrid.Items.Refresh();
+                Global.UpdateConfig();
+            }
         }
 
         private async void CheckAppUpdate()

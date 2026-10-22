@@ -192,6 +192,9 @@ namespace SparkingUnverum
                 if (matches.All(m => m.Count == 1))
                     return matches.Select(m => m[0]).Distinct().ToList();
             }
+            // Mods installed by the classic Unverum only remember the description of the downloaded file
+            else if (ModMerger.MatchFile(pending.Metadata.filedescription, files) is GameBananaItemFile byDescription)
+                return new List<GameBananaItemFile> { byDescription };
             var fileBox = new UpdateFileBox(pending.Submission, files, 0, false);
             return fileBox.ShowDialog() == true && fileBox.SelectedFiles.Count > 0 ? fileBox.SelectedFiles : null;
         }

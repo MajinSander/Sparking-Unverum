@@ -10,6 +10,8 @@ namespace SparkingUnverum.UI
     public partial class SettingsWindow : Window
     {
         public bool ImportedMods { get; private set; }
+        // Set by the main window, merges a group of folders
+        public Func<DuplicateGroup, System.Threading.Tasks.Task<bool>> Merge { get; set; }
         public bool CheckAppUpdate { get; private set; }
         private bool loading = true;
 
@@ -55,6 +57,14 @@ namespace SparkingUnverum.UI
         private void Import_Click(object sender, RoutedEventArgs e)
         {
             if (ClassicImport.Run(this))
+                ImportedMods = true;
+        }
+
+        private void Merge_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new MergeWindow(Merge) { Owner = this };
+            window.ShowDialog();
+            if (window.Changed)
                 ImportedMods = true;
         }
 

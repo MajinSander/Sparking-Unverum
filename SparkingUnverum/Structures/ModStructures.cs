@@ -58,6 +58,8 @@ namespace SparkingUnverum
         public bool HideColorZ { get; set; } = true;
         public bool IncludeNsfw { get; set; }
         public bool ClassicImportOffered { get; set; }
+        // GameBanana pages ("Mod:123") whose several folders the user wants to keep separate
+        public List<string> KeepSeparate { get; set; } = new();
     }
     public class GameConfig
     {
