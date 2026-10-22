@@ -134,6 +134,8 @@ namespace SparkingUnverum
 
             var extractedAny = false;
             var cancellation = new CancellationTokenSource();
+            string kept = null;
+            var installedBefore = replace ? ReadMetadata(destination)?.installed : null;
             foreach (var file in fileBox.SelectedFiles)
             {
                 var url = file.Id == preselectedFile && preselectedUrl != null ? preselectedUrl : file.DownloadUrl;
@@ -148,8 +150,9 @@ namespace SparkingUnverum
                 {
                     await Task.Run(() =>
                     {
-                        if (replace && !extractedAny)
-                            ArchiveHelper.ClearModFolder(destination);
+                        // Settings the game saved in the mod are put back after extracting
+                        if (replace && kept == null)
+                            kept = ArchiveHelper.SetAside(destination);
                         if (ArchiveHelper.Extract(archive, destination))
                             extractedAny = true;
                         else
@@ -167,6 +170,9 @@ namespace SparkingUnverum
                 }
             }
 
+            // Nothing extracted: everything goes back as it was
+            if (kept != null)
+                await Task.Run(() => ArchiveHelper.RestoreUserFiles(destination, kept, extractedAny ? installedBefore : DateTime.MinValue));
             if (!extractedAny)
             {
                 if (!replace && Directory.Exists(destination) && !Directory.EnumerateFileSystemEntries(destination).Any())
@@ -235,7 +241,10 @@ namespace SparkingUnverum
         {
             var metadata = ReadMetadata(modFolder) ?? new Metadata();
             if (files != null)
+            {
                 metadata.files = files;
+                metadata.installed = DateTime.UtcNow;
+            }
             metadata.submitter = submission.Owner?.Name;
             metadata.description = submission.Description;
             if (fileDescription != null)

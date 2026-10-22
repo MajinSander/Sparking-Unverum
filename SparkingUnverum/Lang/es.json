@@ -275,5 +275,10 @@
   "Updates.ManualOnly": "Esta actualización se descarga desde otra web: te enseñaré los enlaces",
   "Updates.NoneSelected": "Marca al menos un mod.",
   "Updates.HeaderOne": "1 mod tiene actualización",
-  "Build.Relinked": "Se han convertido {0} copias antiguas en enlaces: {1} de espacio liberado en el disco"
+  "Build.Relinked": "Se han convertido {0} copias antiguas en enlaces: {1} de espacio liberado en el disco",
+  "Build.SavedBack": "Guardado en el mod lo que escribió el juego: {0} ({1})",
+  "Build.SaveBackError": "No se pudo guardar {0} en su mod ({1})",
+  "Build.FolderSummary": "{0} carpetas de plugins enlazadas (lo que el juego guarde en ellas queda en el mod), {1} archivos del juego guardados en sus mods",
+  "Update.UserFilesKept": "Conservados {0} archivos tuyos o del juego (configuración, caché...) en {1}",
+  "Update.UserFileBackedUp": "La versión nueva trae su propio {0}; tu versión anterior está en {1}"
 }

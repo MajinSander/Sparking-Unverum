@@ -53,10 +53,10 @@ namespace SparkingUnverum
                 File.AppendAllText(logFile, line);
             }
             catch { }
-            Application.Current?.Dispatcher.Invoke(() =>
-            {
-                outputWindow.AppendText(line, color);
-            });
+            // Written on the thread of the console window
+            if (outputWindow == null || outputWindow.Dispatcher.HasShutdownStarted)
+                return;
+            outputWindow.Dispatcher.Invoke(() => outputWindow.AppendText(line, color));
         }
     }
 

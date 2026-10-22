@@ -214,9 +214,20 @@ namespace SparkingUnverum
                 }
                 await Task.Run(() =>
                 {
-                    ArchiveHelper.ClearModFolder(pending.Folder);
-                    foreach (var archive in archives)
-                        ArchiveHelper.Extract(archive, pending.Folder);
+                    // Settings the game saved in the mod are put back after extracting
+                    var kept = ArchiveHelper.SetAside(pending.Folder);
+                    try
+                    {
+                        foreach (var archive in archives)
+                            ArchiveHelper.Extract(archive, pending.Folder);
+                        ArchiveHelper.RestoreUserFiles(pending.Folder, kept, pending.Metadata.installed);
+                    }
+                    catch
+                    {
+                        // Extraction failed: everything goes back as it was
+                        ArchiveHelper.RestoreUserFiles(pending.Folder, kept, DateTime.MinValue);
+                        throw;
+                    }
                 });
                 ModDownloader.WriteMetadata(pending.Folder, pending.Submission,
                     string.Join("\n", files.Select(x => x.Description).Where(x => !string.IsNullOrWhiteSpace(x))), files.Select(x => x.FileName).ToList());

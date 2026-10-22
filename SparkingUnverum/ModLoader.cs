@@ -23,6 +23,9 @@ namespace SparkingUnverum
         // Old copies turned into hard links and the disk space they freed
         public int Relinked;
         public long FreedBytes;
+        // Plugin folders linked as a whole and files the game wrote that were saved into their mods
+        public int LinkedFolders;
+        public int SavedBack;
         // Bytes that didn't have to be written thanks to hard links and unchanged files
         public long SavedBytes;
     }
@@ -54,6 +57,150 @@ namespace SparkingUnverum
         }
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle file, out FileInformation information);
+
+        // Enumerations that never go inside folder links (junctions), so cleaning the game can't touch the mods themselves
+        private static readonly EnumerationOptions AllNoLinks = new() { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
+        private static readonly EnumerationOptions TopNoLinks = new() { RecurseSubdirectories = false, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
+
+        private static bool IsJunction(string path)
+        {
+            try
+            {
+                var attributes = File.GetAttributes(path);
+                return attributes.HasFlag(FileAttributes.Directory) && attributes.HasFlag(FileAttributes.ReparsePoint);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // True if the path goes through a folder link: deleting it would delete the mod's own file
+        private static bool ThroughJunction(string path, string root)
+        {
+            var dir = Path.GetDirectoryName(path);
+            while (dir != null && dir.Length > root.Length)
+            {
+                if (IsJunction(dir))
+                    return true;
+                dir = Path.GetDirectoryName(dir);
+            }
+            return false;
+        }
+
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return string.Empty;
+            foreach (var prefix in new[] { @"\\?\", @"\??\" })
+                if (path.StartsWith(prefix))
+                    path = path[prefix.Length..];
+            return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+        }
+
+        private static bool PointsTo(string junction, string target)
+        {
+            try
+            {
+                return IsJunction(junction) && string.Equals(NormalizePath(new DirectoryInfo(junction).LinkTarget), NormalizePath(target), StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Removes only the link, the mod folder it points to is untouched
+        private static void RemoveJunction(string path)
+        {
+            if (IsJunction(path))
+                Directory.Delete(path, false);
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(string name, uint access, uint share, IntPtr security, uint creation, uint flags, IntPtr template);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool DeviceIoControl(Microsoft.Win32.SafeHandles.SafeFileHandle device, uint code, byte[] inBuffer, int inSize, IntPtr outBuffer, int outSize, out int returned, IntPtr overlapped);
+
+        // Creates a directory junction (no administrator rights needed, works between local drives)
+        private static bool CreateJunction(string link, string target)
+        {
+            try
+            {
+                target = NormalizePath(target);
+                Directory.CreateDirectory(Path.GetDirectoryName(link));
+                Directory.CreateDirectory(link);
+                var substitute = System.Text.Encoding.Unicode.GetBytes(@"\??\" + target);
+                var print = System.Text.Encoding.Unicode.GetBytes(target);
+                var dataLength = 8 + substitute.Length + 2 + print.Length + 2;
+                var buffer = new byte[8 + dataLength];
+                BitConverter.GetBytes(0xA0000003u).CopyTo(buffer, 0);             // IO_REPARSE_TAG_MOUNT_POINT
+                BitConverter.GetBytes((ushort)dataLength).CopyTo(buffer, 4);
+                BitConverter.GetBytes((ushort)0).CopyTo(buffer, 8);                // substitute name offset
+                BitConverter.GetBytes((ushort)substitute.Length).CopyTo(buffer, 10);
+                BitConverter.GetBytes((ushort)(substitute.Length + 2)).CopyTo(buffer, 12); // print name offset
+                BitConverter.GetBytes((ushort)print.Length).CopyTo(buffer, 14);
+                substitute.CopyTo(buffer, 16);
+                print.CopyTo(buffer, 16 + substitute.Length + 2);
+                using (var handle = CreateFile(link, 0x40000000, 0, IntPtr.Zero, 3, 0x02000000 | 0x00200000, IntPtr.Zero))
+                {
+                    if (handle.IsInvalid || !DeviceIoControl(handle, 0x000900A4, buffer, buffer.Length, IntPtr.Zero, 0, out _, IntPtr.Zero))
+                    {
+                        handle.Dispose();
+                        Directory.Delete(link, false);
+                        return false;
+                    }
+                }
+                return PointsTo(link, target);
+            }
+            catch
+            {
+                try
+                {
+                    if (Directory.Exists(link) && !IsJunction(link) && !Directory.EnumerateFileSystemEntries(link).Any())
+                        Directory.Delete(link);
+                }
+                catch { }
+                return false;
+            }
+        }
+
+        // Copies into the mod what the game wrote in a plugin folder that was installed as copies:
+        // new files and files changed after they were installed. Returns how many were saved
+        private static int SaveBack(string gameFolder, string modFolder, HashSet<string> installed, HashSet<string> generated)
+        {
+            if (!Directory.Exists(gameFolder) || IsJunction(gameFolder) || !Directory.Exists(modFolder))
+                return 0;
+            var saved = 0;
+            foreach (var file in Directory.EnumerateFiles(gameFolder, "*", AllNoLinks))
+            {
+                if (generated.Contains(file))
+                    continue;
+                var source = Path.Combine(modFolder, Path.GetRelativePath(gameFolder, file));
+                var game = new FileInfo(file);
+                bool save;
+                if (!File.Exists(source))
+                    // Created by the game (a file installed from another mod is in the installed list)
+                    save = !installed.Contains(file);
+                else
+                    // Edited by the game after it was installed (hard links share the date and are skipped)
+                    save = game.LastWriteTimeUtc > new FileInfo(source).LastWriteTimeUtc;
+                if (!save)
+                    continue;
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(source));
+                    File.Copy(file, source, true);
+                    saved++;
+                    Global.logger.WriteLine(Loc.T("Build.SavedBack", Path.GetFileName(file), Path.GetFileName(modFolder)), LoggerType.Info);
+                }
+                catch (Exception e)
+                {
+                    Global.logger.WriteLine(Loc.T("Build.SaveBackError", Path.GetFileName(file), e.Message), LoggerType.Warning);
+                }
+            }
+            return saved;
+        }
 
         // How many names a file has, 1 means it's a separate copy
         private static uint LinkCount(string path)
@@ -123,7 +270,13 @@ namespace SparkingUnverum
         {
             try
             {
-                var old = LoadManifest(paths).FileSet;
+                var manifest = LoadManifest(paths);
+                var old = manifest.FileSet;
+                var generated = new HashSet<string>(manifest.Generated, StringComparer.OrdinalIgnoreCase);
+                foreach (var (gameFolder, modFolder) in manifest.Folders)
+                    SaveBack(gameFolder, modFolder, old, generated);
+                foreach (var junction in manifest.Junctions)
+                    RemoveJunction(junction);
                 var removed = Clean(paths, new HashSet<string>(StringComparer.OrdinalIgnoreCase), old, movies, splash, sound);
                 SaveManifest(new DeployManifest { GameRoot = paths.Root });
                 Global.logger.WriteLine(Loc.T("Build.Restored"), LoggerType.Info);
@@ -144,7 +297,7 @@ namespace SparkingUnverum
             var backedUp = 0;
             var removed = 0;
             foreach (var file in old)
-                if (!keep.Contains(file) && File.Exists(file))
+                if (!keep.Contains(file) && !ThroughJunction(file, paths.Root) && File.Exists(file))
                 {
                     File.Delete(file);
                     removed++;
@@ -153,11 +306,11 @@ namespace SparkingUnverum
             // ~mods: the priority folders belong to Sparking Unverum (or the classic Unverum), other things were put there by hand
             if (Directory.Exists(paths.TildeMods))
             {
-                foreach (var dir in Directory.GetDirectories(paths.TildeMods))
+                foreach (var dir in Directory.GetDirectories(paths.TildeMods, "*", TopNoLinks))
                 {
                     if (PriorityFolder.IsMatch(Path.GetFileName(dir)))
                     {
-                        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+                        foreach (var file in Directory.GetFiles(dir, "*", AllNoLinks))
                             if (!keep.Contains(file))
                             {
                                 File.Delete(file);
@@ -178,7 +331,7 @@ namespace SparkingUnverum
             {
                 if (!Directory.Exists(folder))
                     continue;
-                foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+                foreach (var file in Directory.GetFiles(folder, "*", AllNoLinks))
                     if (!keep.Contains(file))
                         backedUp += MoveToBackup(file, paths, backupRoot);
                 DeleteEmptyFolders(folder, true);
@@ -206,7 +359,7 @@ namespace SparkingUnverum
             var target = Path.Combine(backupRoot, Path.GetRelativePath(paths.Root, path));
             if (Directory.Exists(path))
             {
-                foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+                foreach (var file in Directory.GetFiles(path, "*", AllNoLinks))
                 {
                     var fileTarget = Path.Combine(target, Path.GetRelativePath(path, file));
                     Directory.CreateDirectory(Path.GetDirectoryName(fileTarget));
@@ -228,7 +381,7 @@ namespace SparkingUnverum
         {
             if (!Directory.Exists(folder))
                 return;
-            foreach (var dir in Directory.GetDirectories(folder))
+            foreach (var dir in Directory.GetDirectories(folder, "*", TopNoLinks))
                 DeleteEmptyFolders(dir, true);
             if (deleteRoot && !Directory.EnumerateFileSystemEntries(folder).Any())
                 Directory.Delete(folder);
@@ -246,7 +399,38 @@ namespace SparkingUnverum
         {
             // target -> (source, mod), a later (higher priority) mod replaces an earlier one
             public Dictionary<string, (string Source, string Mod)> Plan = new(StringComparer.OrdinalIgnoreCase);
+            // Plugin folders that can be linked as a whole: game folder -> (mod folder, mod)
+            public Dictionary<string, (string Source, string Mod)> Folders = new(StringComparer.OrdinalIgnoreCase);
+            // Every plugin folder installed in this build, linked or not
+            public Dictionary<string, string> AllFolders = new(StringComparer.OrdinalIgnoreCase);
+            private readonly HashSet<string> shared = new(StringComparer.OrdinalIgnoreCase);
             public int Conflicts;
+
+            // A plugin folder: linked as a whole unless another mod also puts files in it
+            public void Folder(string source, string target, string mod)
+            {
+                AllFolders[target] = source;
+                if (shared.Contains(target) || Folders.ContainsKey(target))
+                {
+                    if (Folders.Remove(target, out var previous))
+                        CopyDirectory(previous.Source, target, previous.Mod);
+                    shared.Add(target);
+                    CopyDirectory(source, target, mod);
+                    return;
+                }
+                Folders[target] = (source, mod);
+            }
+
+            // Folders that also receive files from other mods (like ZeroSpark/Json) are installed file by file
+            public void Finish()
+            {
+                foreach (var (target, item) in Folders.ToList())
+                    if (Plan.Keys.Any(x => x.StartsWith(target + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        Folders.Remove(target);
+                        CopyDirectory(item.Source, target, item.Mod);
+                    }
+            }
 
             public void Copy(string source, string target, string mod)
             {
@@ -345,7 +529,8 @@ namespace SparkingUnverum
         {
             var result = new BuildResult();
             var deployment = new Deployment();
-            var old = LoadManifest(paths).FileSet;
+            var previous = LoadManifest(paths);
+            var old = previous.FileSet;
             var manifest = new DeployManifest { GameRoot = paths.Root };
             string sig = Directory.Exists(paths.Paks) ? Directory.GetFiles(paths.Paks, "*.sig", SearchOption.TopDirectoryOnly).FirstOrDefault() : null;
             var priority = 0;
@@ -367,7 +552,7 @@ namespace SparkingUnverum
                     foreach (var plugin in plugins)
                     {
                         Global.logger.WriteLine(Loc.T("Build.AddingPlugin", Path.GetFileName(plugin)), LoggerType.Info);
-                        deployment.CopyDirectory(plugin, Path.Combine(paths.SZModLib, Path.GetFileName(plugin)), mod.name);
+                        deployment.Folder(plugin, Path.Combine(paths.SZModLib, Path.GetFileName(plugin)), mod.name);
                         usesModLoader = true;
                     }
                     bool InPlugin(string file) => plugins.Any(p => file.StartsWith(p + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
@@ -403,8 +588,12 @@ namespace SparkingUnverum
                     // UE4SS lua mods and blueprint LogicMods
                     foreach (var ue4ssModDirectory in Directory.GetDirectories(modPath, "*ue4ss", SearchOption.AllDirectories))
                     {
-                        deployment.CopyDirectory(ue4ssModDirectory, paths.Ue4ssMods, mod.name,
-                            file => Path.GetFileName(file).Equals("mods.txt", StringComparison.OrdinalIgnoreCase));
+                        // Each lua mod folder is linked as a whole so its settings are kept
+                        foreach (var luaMod in Directory.GetDirectories(ue4ssModDirectory))
+                            deployment.Folder(luaMod, Path.Combine(paths.Ue4ssMods, Path.GetFileName(luaMod)), mod.name);
+                        foreach (var file in Directory.GetFiles(ue4ssModDirectory))
+                            if (!Path.GetFileName(file).Equals("mods.txt", StringComparison.OrdinalIgnoreCase))
+                                deployment.Copy(file, Path.Combine(paths.Ue4ssMods, Path.GetFileName(file)), mod.name);
                         ue4ss = true;
                     }
                     foreach (var logicModDirectory in Directory.GetDirectories(modPath, "*LogicMods", SearchOption.AllDirectories))
@@ -468,14 +657,53 @@ namespace SparkingUnverum
                     deployment.CopyDirectory(ue4ssSource, paths.Win64, "UE4SS",
                         file => Path.GetFileName(file).Equals("mods.txt", StringComparison.OrdinalIgnoreCase));
 
+                deployment.Finish();
+
+                // Keep what the game wrote in plugin folders installed as copies (configs, caches...)
+                foreach (var (gameFolder, modFolder) in previous.Folders.Concat(deployment.AllFolders)
+                    .GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase).Select(x => x.Last()))
+                    result.SavedBack += SaveBack(gameFolder, modFolder, old, new HashSet<string>(previous.Generated, StringComparer.OrdinalIgnoreCase));
+                // Folders that become links: their copies were saved above, remove them
+                foreach (var target in deployment.Folders.Keys)
+                    if (Directory.Exists(target) && !IsJunction(target))
+                        Directory.Delete(target, true);
+                // Links that aren't needed anymore or point somewhere else: remove only the link
+                foreach (var junction in previous.Junctions.Concat(deployment.Folders.Keys))
+                    if (IsJunction(junction) && !(deployment.Folders.TryGetValue(junction, out var wanted) && PointsTo(junction, wanted.Source)))
+                    {
+                        RemoveJunction(junction);
+                        if (!deployment.Folders.ContainsKey(junction))
+                            result.Removed++;
+                    }
+
                 // Remove what isn't needed anymore, then write only what changed
                 var keep = new HashSet<string>(deployment.Plan.Keys, StringComparer.OrdinalIgnoreCase);
                 // Rewritten below, no need to delete it first
                 if (ue4ss)
                     keep.Add(Path.Combine(paths.Ue4ssMods, "mods.txt"));
-                result.Removed = Clean(paths, keep, old, movies, splash, sound);
+                result.Removed += Clean(paths, keep, old, movies, splash, sound);
                 Execute(deployment, result);
                 manifest.Files.AddRange(deployment.Plan.Keys);
+
+                // Link the plugin folders, if Windows can't (FAT/exFAT drives) install them file by file
+                var fallback = new Deployment();
+                foreach (var (target, item) in deployment.Folders)
+                {
+                    if (PointsTo(target, item.Source) || CreateJunction(target, item.Source))
+                    {
+                        result.LinkedFolders++;
+                        manifest.Junctions.Add(target);
+                    }
+                    else
+                        fallback.CopyDirectory(item.Source, target, item.Mod);
+                }
+                if (fallback.Plan.Count > 0)
+                {
+                    Execute(fallback, result);
+                    manifest.Files.AddRange(fallback.Plan.Keys);
+                }
+                foreach (var (gameFolder, modFolder) in deployment.AllFolders)
+                    manifest.Folders[gameFolder] = modFolder;
 
                 foreach (var (file, folder) in looseAssets)
                     if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
@@ -485,7 +713,7 @@ namespace SparkingUnverum
                 {
                     // Enable every mod folder that isn't one of the defaults
                     var lines = File.ReadAllLines(Path.Combine(ue4ssSource, "Mods", "mods.txt")).ToList();
-                    var modFolders = deployment.Plan.Keys.Where(x => x.StartsWith(paths.Ue4ssMods + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    var modFolders = deployment.Plan.Keys.Concat(deployment.Folders.Keys).Where(x => x.StartsWith(paths.Ue4ssMods + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                         .Select(x => Path.GetRelativePath(paths.Ue4ssMods, x).Split(Path.DirectorySeparatorChar)[0])
                         .Where(x => !x.Contains('.')).Distinct(StringComparer.OrdinalIgnoreCase);
                     foreach (var name in modFolders)
@@ -494,6 +722,7 @@ namespace SparkingUnverum
                     var modsFile = Path.Combine(paths.Ue4ssMods, "mods.txt");
                     WriteFresh(modsFile, string.Join(Environment.NewLine, lines) + Environment.NewLine);
                     manifest.Files.Add(modsFile);
+                    manifest.Generated.Add(modsFile);
                 }
 
                 // Register the ZeroSpark jsons
@@ -511,6 +740,7 @@ namespace SparkingUnverum
                             // Key name used by the classic Unverum, ZeroSpark reads every key
                             jsonObject["Unverum"] = array;
                             WriteFresh(jsonFiles, jsonObject.ToJsonString());
+                            manifest.Generated.Add(jsonFiles);
                         }
                     }
                 }
@@ -525,6 +755,8 @@ namespace SparkingUnverum
                 result.Success = true;
                 Global.logger.WriteLine(Loc.T("Build.Summary", result.Linked, result.Copied, result.Unchanged, result.Removed,
                     StringConverters.FormatSize(result.SavedBytes)), LoggerType.Info);
+                if (result.LinkedFolders > 0 || result.SavedBack > 0)
+                    Global.logger.WriteLine(Loc.T("Build.FolderSummary", result.LinkedFolders, result.SavedBack), LoggerType.Info);
                 if (result.Relinked > 0)
                     Global.logger.WriteLine(Loc.T("Build.Relinked", result.Relinked, StringConverters.FormatSize(result.FreedBytes)), LoggerType.Info);
                 Global.logger.WriteLine(Loc.T("Build.Finished"), LoggerType.Info);
@@ -535,6 +767,10 @@ namespace SparkingUnverum
                 // Whatever is in the game now has to be cleaned next time
                 manifest.Files.AddRange(deployment.Plan.Keys.Where(File.Exists));
                 manifest.Files.AddRange(old.Where(File.Exists));
+                manifest.Generated.AddRange(previous.Generated);
+                manifest.Junctions.AddRange(previous.Junctions.Concat(deployment.Folders.Keys).Where(IsJunction).Distinct(StringComparer.OrdinalIgnoreCase));
+                foreach (var (gameFolder, modFolder) in previous.Folders.Concat(deployment.AllFolders))
+                    manifest.Folders[gameFolder] = modFolder;
             }
             manifest.Files = manifest.Files.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             SaveManifest(manifest);

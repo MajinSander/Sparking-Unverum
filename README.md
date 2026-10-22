@@ -23,6 +23,7 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - **Cuida tu disco**: al pulsar Jugar solo escribe lo que ha cambiado, y si el juego está en el mismo disco los paks se enlazan sin copiarse.
 - Todas las actualizaciones de mods en una sola ventana, con iconos en la lista para los mods actualizables o borrados de GameBanana.
 - Los mods borrados van a la papelera de reciclaje.
+- **La configuración de tus mods se conserva**: las carpetas de plugins se enlazan con el mod, así que lo que guardan con el juego abierto (por ejemplo CSS Organizer) se queda en el mod, también al actualizarlo.
 
 ## Requisitos
 
@@ -60,6 +61,7 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - Self-updates from this repository's releases only.
 - Easy on your disk: Play only writes what changed and hard links paks when the game is on the same drive.
 - All mod updates in one window, icons for updatable or deleted mods, deleted mods go to the Recycle Bin.
+- Mod settings are kept: plugin folders are linked to the mod, so what they save while the game runs (like CSS Organizer) stays in the mod, even after updating it.
 
 **Requirements:** Windows 10/11 x64. The `-standalone` zip needs nothing else; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 

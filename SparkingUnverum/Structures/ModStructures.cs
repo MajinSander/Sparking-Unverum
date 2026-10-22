@@ -36,6 +36,8 @@ namespace SparkingUnverum
         public DateTime? lastupdate { get; set; }
         // Sparking Unverum only: GameBanana files that were downloaded
         public List<string> files { get; set; }
+        // Sparking Unverum only: when the files were extracted, newer files in the mod were written by the game or the user
+        public DateTime? installed { get; set; }
     }
     public class Config
     {
@@ -87,6 +89,12 @@ namespace SparkingUnverum
     {
         public string GameRoot { get; set; }
         public List<string> Files { get; set; } = new();
+        // Plugin folders in the game that are links (junctions) to the mod folder
+        public List<string> Junctions { get; set; } = new();
+        // Plugin folder in the game -> folder of the mod it comes from, to save back what the game writes there
+        public Dictionary<string, string> Folders { get; set; } = new();
+        // Files Sparking Unverum edits after installing them (JsonFiles.json, mods.txt), never saved back into mods
+        public List<string> Generated { get; set; } = new();
         [JsonIgnore]
         public HashSet<string> FileSet => new(Files, StringComparer.OrdinalIgnoreCase);
     }
