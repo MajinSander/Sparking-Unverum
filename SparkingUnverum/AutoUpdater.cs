@@ -25,7 +25,7 @@ namespace SparkingUnverum
         // The single .exe has no dll next to it, the standalone folder carries .NET inside
         private enum InstallKind { Framework, Standalone, SingleFile }
         private static InstallKind Kind =>
-            !File.Exists(Path.Combine(Global.assemblyLocation, Assembly.GetExecutingAssembly().GetName().Name + ".dll")) ? InstallKind.SingleFile
+            Installer.IsSingleFile ? InstallKind.SingleFile
             : File.Exists(Path.Combine(Global.assemblyLocation, "coreclr.dll")) ? InstallKind.Standalone
             : InstallKind.Framework;
 

@@ -10,7 +10,9 @@ namespace SparkingUnverum
     // hand their arguments to the running window through a named pipe and exit
     public static class SingleInstance
     {
-        private const string Name = "MajinUnverum.SingleInstance";
+        // The installer tests run apart from the copy the user has open
+        private static readonly string Name = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MAJINUNVERUM_TEST_ROOT"))
+            ? "MajinUnverum.SingleInstance" : "MajinUnverum.SingleInstance.Test";
         public const string ActivateMessage = "--activate";
         private static Mutex mutex;
 

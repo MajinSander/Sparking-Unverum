@@ -34,15 +34,17 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 
 Todo está en [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest). Hace falta Windows 10/11 de 64 bits.
 
-- **`MajinUnverum.exe`** (recomendado): el programa entero en un solo archivo, no hay que instalar nada más.
+- **`MajinUnverum.exe`** (recomendado): el instalador. Es el programa entero en un solo archivo, no hace falta nada más.
 - `MajinUnverum-vX.Y.Z-standalone.zip`: lo mismo en una carpeta.
 - `MajinUnverum-vX.Y.Z.zip`: la versión ligera, necesita el [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## Instalación
 
-1. Crea una carpeta solo para el programa, por ejemplo `C:\Majin Unverum` (mejor fuera de `Archivos de programa`). Ahí guardará tus mods, perfiles y ajustes.
-2. Mete en ella `MajinUnverum.exe` (o descomprime el zip) y ábrelo.
+1. Abre `MajinUnverum.exe`. Te ofrece instalarlo en `C:\Users\<tu usuario>\Majin Unverum`, con accesos directos en el escritorio y en el menú Inicio. Puedes cambiar la carpeta, o usarlo sin instalar desde donde esté.
+2. En esa carpeta guardará tus mods, perfiles y ajustes.
 3. Encontrará el juego solo; si no, pulsa **Configurar** y elige `SparkingZERO.exe`.
+
+Se desinstala como cualquier programa, desde **Configuración > Aplicaciones > Aplicaciones instaladas**. Quita los mods que puso en el juego y te pregunta si quieres borrar también tus mods descargados o conservarlos.
 
 Windows puede avisar de que es un programa que no conoce ("Windows protegió su PC"): pulsa **Más información** y **Ejecutar de todas formas**. Pasa con los programas que no llevan firma de pago.
 
@@ -83,7 +85,7 @@ Browse and download GameBanana mods inside the app, install them with the websit
 
 **Download:** from [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
-**Install:** put `MajinUnverum.exe` (or the extracted zip) in a folder of its own, for example `C:\Majin Unverum`, and open it. That folder keeps your mods, loadouts and settings. If Windows SmartScreen warns about it, click **More info** and **Run anyway**.
+**Install:** open `MajinUnverum.exe`: it offers to install itself in `C:\Users\<you>\Majin Unverum` with Desktop and Start menu shortcuts (or to run without installing). That folder keeps your mods, loadouts and settings. Uninstall it from Windows Settings > Apps. If Windows SmartScreen warns about it, click **More info** and **Run anyway**.
 
 ## Build
 

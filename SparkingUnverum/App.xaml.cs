@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
+using SparkingUnverum.UI;
 
 namespace SparkingUnverum
 {
@@ -25,6 +26,13 @@ namespace SparkingUnverum
             base.OnStartup(e);
             DispatcherUnhandledException += App_DispatcherUnhandledException;
 
+            if (e.Args.Contains(Installer.UninstallArgument))
+            {
+                Uninstall();
+                Shutdown();
+                return;
+            }
+
             var link = e.Args.Length > 1 && e.Args[0] == "-download" ? e.Args[1] : null;
             if (!SingleInstance.TryAcquire(e.Args.Contains(RestartArgument)))
             {
@@ -38,7 +46,27 @@ namespace SparkingUnverum
                 return;
             }
 
-            if (!FolderAccepted())
+            var target = Installer.Default();
+            if (Installer.ShouldOffer(target))
+            {
+                // The downloaded .exe: install it, or keep going from here if the user wants it portable
+                Loc.Init(null);
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                var setup = new InstallWindow(target);
+                setup.ShowDialog();
+                if (setup.Choice != InstallChoice.Portable)
+                {
+                    if (setup.Choice == InstallChoice.Installed)
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(setup.Target.Exe, RestartArgument)
+                        {
+                            UseShellExecute = false,
+                            WorkingDirectory = setup.Target.Folder
+                        });
+                    Shutdown();
+                    return;
+                }
+            }
+            else if (!FolderAccepted())
             {
                 Shutdown();
                 return;
@@ -46,14 +74,60 @@ namespace SparkingUnverum
             Global.LoadConfig();
             Loc.Init(Global.config.Language);
             RegistryConfig.InstallGBHandler();
+            Installer.UpdateVersion(target);
 
             // Opened from a 1-click install button: install the mod and skip the self update check
             var window = new MainWindow(checkAppUpdate: link == null);
             MainWindow = window;
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
             window.Show();
             SingleInstance.Listen(message => Dispatcher.InvokeAsync(() => window.HandleExternalMessage(message)));
             if (link != null)
                 window.HandleExternalMessage(link);
+        }
+
+        // From the installed apps of Windows: takes the mods out of the game, then the program
+        private static void Uninstall()
+        {
+            Global.LoadConfig();
+            Loc.Init(Global.config.Language);
+            // Only to the log file, there is no window
+            Global.logger = new Logger(null);
+            if (!SingleInstance.TryAcquire())
+            {
+                MessageBox.Show(Loc.T("Uninstall.Running"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (MessageBox.Show(Loc.T("Uninstall.Confirm"), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+            var paths = GamePaths.Current;
+            if (paths != null && Directory.Exists(paths.Content))
+            {
+                if (GameProcess.IsRunning())
+                {
+                    MessageBox.Show(Loc.T("Uninstall.GameRunning"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                var sound = Directory.Exists(Path.Combine(paths.Content, "Sound")) ? Path.Combine(paths.Content, "Sound") : Path.Combine(paths.Content, "CriWareData");
+                bool removed;
+                try
+                {
+                    removed = ModLoader.Restart(paths, Path.Combine(paths.Content, "Movies"), Path.Combine(paths.Content, "Splash"), sound);
+                }
+                catch
+                {
+                    removed = false;
+                }
+                if (!removed)
+                    MessageBox.Show(Loc.T("Uninstall.ModsFailed"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            var target = Installer.Default();
+            var folder = Installer.InstalledFolder(target) ?? Global.assemblyLocation;
+            var size = StringConverters.FormatSize(new DirectoryInfo(folder).GetDirectorySize());
+            var deleteData = MessageBox.Show(Loc.T("Uninstall.DeleteData", folder, size), "Majin Unverum", MessageBoxButton.YesNo,
+                MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
+            Installer.Uninstall(target, Environment.ProcessPath, Environment.ProcessId, deleteData);
+            MessageBox.Show(Loc.T("Uninstall.Done"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // Mods, loadouts and settings live next to the program: the first time, suggest its own folder
