@@ -29,6 +29,8 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - **Libera espacio de las copias de seguridad**: detecta qué archivos de `Backups` ya están idénticos en tus mods y borra solo esos.
 - No toca los mods mientras el juego está abierto.
 - **Categorías**: ordena tus mods en carpetas de personajes y generales (mecánicas, mapas, interfaz, sonido...) arrastrando sus fotos, con un filtro que busca mientras escribes. Un mod puede estar en varias carpetas y cada carpeta cuenta cuántos mods tiene y cuántos están activos.
+- **Rayos X**: mira dentro de cada mod para saber de qué personaje es o si trae escenarios, avisa de los mods activos que chocan entre sí (y cuál gana) y sugiere carpetas aprendiendo de cómo ordenas los tuyos.
+- **Compartir tu lista**: todos tus mods o solo los activos, en un código que cabe en un mensaje de Discord o en un archivo `.majin`. Tu amigo lo abre y Majin Unverum le descarga lo que le falte y le crea un perfil con tu orden. Los mods que no están en GameBanana pueden ir de verdad en un zip junto con la lista.
 
 ## Descarga
 
@@ -56,6 +58,7 @@ Si venías de Sparking Unverum, Majin Unverum lee su configuración y tus mods t
 - **Mis mods**: marca los mods que quieras y arrástralos para ordenarlos; los de arriba tienen prioridad. Después pulsa **Jugar**.
 - **Perfiles**: guarda distintas combinaciones de mods.
 - **Categorías**: la pestaña fina al lado de la lista abre el organizador. Arrastra los mods a las carpetas y pulsa una carpeta para ver solo sus mods. En la lista normal, el filtro de arriba también deja elegir una carpeta.
+- **Compartir**: el botón de arriba a la derecha crea el código de tu lista (y el zip con los mods que no están en GameBanana) o importa la de un amigo.
 - **Ajustes**: idioma, actualizaciones, importar desde el Unverum clásico, agrupar mods, liberar espacio y quitar todos los mods del juego.
 
 ---
@@ -82,6 +85,8 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - Frees space in `Backups` by deleting only the files that are already identical in your mods.
 - Doesn't touch the mods while the game is running.
 - Categories: sort your mods into character and general folders by dragging their pictures, with a live text filter. A mod can be in several folders and each folder counts its mods and the enabled ones.
+- X-ray: looks inside every mod to tell which character it is about or whether it brings stages, warns about enabled mods that clash (and which one wins) and suggests folders, learning from how you sort yours.
+- Share your list: all your mods or only the enabled ones, as a code that fits in a Discord message or a `.majin` file. Your friend opens it and Majin Unverum downloads what is missing and creates a loadout with your order. Mods that aren't on GameBanana can really travel in a zip with the list.
 
 **Download:** from [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
