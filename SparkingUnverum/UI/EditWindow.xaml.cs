@@ -134,6 +134,7 @@ namespace SparkingUnverum.UI
                             mod.paks = mod.paks.ToDictionary(x => x.Key.Replace(oldDirectory, newDirectory, StringComparison.OrdinalIgnoreCase), x => x.Value);
                     }
                 Global.ModList = Global.Game.Loadouts[Global.Game.CurrentLoadout];
+                Categories.RenameMod(_name, text);
                 Close();
             }
             catch (Exception ex)

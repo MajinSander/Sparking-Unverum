@@ -223,6 +223,7 @@ namespace SparkingUnverum
                     loadout.Remove(entry);
             }
             Global.UpdateConfig();
+            Categories.MergeMods(names, mergedName);
             Global.logger.WriteLine(Loc.T("Merge.Done", group.Folders.Count, mergedName), LoggerType.Info);
         }
     }

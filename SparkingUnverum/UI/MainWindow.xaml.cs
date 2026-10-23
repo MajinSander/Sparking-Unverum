@@ -69,6 +69,16 @@ namespace SparkingUnverum
             defaultFlow.Blocks.Add(ConvertToFlowParagraph(Loc.T("Main.DefaultDescription")));
             ShowMetadata(null);
 
+            CategoriesPanel.Closed += OnCategoriesClosed;
+            CategoriesPanel.EnabledChanged += UpdateStatsText;
+            searchTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            searchTimer.Tick += (s, e) =>
+            {
+                searchTimer.Stop();
+                ApplyModFilter();
+            };
+            BuildCategoryFilter();
+
             ZsJsonCheckbox.IsChecked = Global.config.HideZeroSparkJsons;
             ColorZCheckbox.IsChecked = Global.config.HideColorZ;
             NSFWCheckbox.IsChecked = Global.config.IncludeNsfw;
@@ -142,6 +152,8 @@ namespace SparkingUnverum
             LauncherOptionsBox.IsEnabled = !value;
             ModGridSearchButton.IsEnabled = !value;
             SettingsButton.IsEnabled = !value;
+            CategoriesTab.IsEnabled = !value;
+            CategoriesPanel.IsEnabled = !value;
         }
 
         // Looks for mod updates and shows them all in one window
@@ -205,6 +217,8 @@ namespace SparkingUnverum
             SyncLoadout(Global.ModList, true);
             ModGrid.ItemsSource = Global.ModList;
             UpdateStats();
+            if (CategoriesPanel.IsOpen)
+                _ = CategoriesPanel.Reload();
         }
 
         private void RefreshAll()
@@ -271,31 +285,85 @@ namespace SparkingUnverum
             Unlinked
         }
 
-        // Shows only some mods. The order can't be changed by dragging while a filter is on
-        private ModFilter appliedFilter = ModFilter.All;
+        // Shows only some mods: a filter of the list, a folder of the organizer and the text being typed.
+        // The order can't be changed by dragging while something is filtered
+        private object appliedFilter;
         private object appliedList;
+        private string appliedSearch;
+        private readonly System.Windows.Threading.DispatcherTimer searchTimer;
         // Only when something changed: refreshing the view recreates the rows
         private void ApplyModFilter(bool force = false)
         {
-            if (Global.ModList == null || ModFilterBox == null)
+            var list = ModGrid?.ItemsSource;
+            if (list == null || ModFilterBox == null || ModGrid_SearchBar == null)
                 return;
-            var filter = (ModFilter)Math.Max(0, ModFilterBox.SelectedIndex);
-            if (!force && filter == appliedFilter && ReferenceEquals(appliedList, Global.ModList))
+            var selected = ModFilterBox.SelectedItem;
+            var search = ModGrid_SearchBar.Text;
+            if (!force && ReferenceEquals(selected, appliedFilter) && ReferenceEquals(appliedList, list) && search == appliedSearch)
                 return;
-            appliedFilter = filter;
-            appliedList = Global.ModList;
-            var view = System.Windows.Data.CollectionViewSource.GetDefaultView(Global.ModList);
-            view.Filter = filter == ModFilter.All ? null : item => item is Mod mod && filter switch
+            appliedFilter = selected;
+            appliedList = list;
+            appliedSearch = search;
+            var folder = (selected as ComboBoxItem)?.Tag as ModCategory;
+            var filter = folder != null ? ModFilter.All : (ModFilter)Math.Clamp(ModFilterBox.SelectedIndex, 0, FixedFilters - 1);
+            var query = ModSearch.Parse(search);
+            var unfiltered = folder == null && filter == ModFilter.All && query.Count == 0;
+            ModGrid.Items.Filter = unfiltered ? null : item => item is Mod mod
+                && (folder == null || folder.Mods.Contains(mod.name))
+                && filter switch
+                {
+                    ModFilter.Enabled => mod.enabled,
+                    ModFilter.Disabled => !mod.enabled,
+                    ModFilter.Updates => mod.State == ModState.UpdateAvailable,
+                    ModFilter.Unavailable => mod.State == ModState.Unavailable,
+                    ModFilter.Unlinked => !ModInfo.IsLinked(mod.name),
+                    _ => true
+                }
+                && ModSearch.Matches(ModSearch.Normalize(mod.name), query);
+            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDragSource(ModGrid, unfiltered);
+            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDropTarget(ModGrid, unfiltered);
+        }
+
+        // The filter list ends with the folders of the organizer
+        private const int FixedFilters = 6;
+        private void BuildCategoryFilter()
+        {
+            var selectedName = ((ModFilterBox.SelectedItem as ComboBoxItem)?.Tag as ModCategory)?.Name;
+            while (ModFilterBox.Items.Count > FixedFilters)
+                ModFilterBox.Items.RemoveAt(FixedFilters);
+            var folders = Categories.Sorted(true).Concat(Categories.Sorted(false)).ToList();
+            if (folders.Count > 0)
+                ModFilterBox.Items.Add(new ComboBoxItem { Content = Loc.T("Main.FilterFolders"), IsEnabled = false, FontStyle = FontStyles.Italic });
+            foreach (var folder in folders)
             {
-                ModFilter.Enabled => mod.enabled,
-                ModFilter.Disabled => !mod.enabled,
-                ModFilter.Updates => mod.State == ModState.UpdateAvailable,
-                ModFilter.Unavailable => mod.State == ModState.Unavailable,
-                ModFilter.Unlinked => !ModInfo.IsLinked(mod.name),
-                _ => true
-            };
-            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDragSource(ModGrid, filter == ModFilter.All);
-            GongSolutions.Wpf.DragDrop.DragDrop.SetIsDropTarget(ModGrid, filter == ModFilter.All);
+                var item = new ComboBoxItem { Content = folder.Name, Tag = folder };
+                ModFilterBox.Items.Add(item);
+                if (folder.Name == selectedName)
+                    item.IsSelected = true;
+            }
+            if (ModFilterBox.SelectedItem == null)
+                ModFilterBox.SelectedIndex = 0;
+        }
+
+        private void CategoriesTab_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (!busy)
+                CategoriesPanel.Open();
+        }
+
+        private void OnCategoriesClosed()
+        {
+            BuildCategoryFilter();
+            ModGrid.Items.Refresh();
+            ApplyModFilter(true);
+            UpdateStatsText();
+            ModGrid.Focus();
+        }
+
+        private void ModGrid_SearchBar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            searchTimer?.Stop();
+            searchTimer?.Start();
         }
 
         private void ModFilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -987,7 +1055,7 @@ namespace SparkingUnverum
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (IsLoaded && ModManager.IsSelected && ModGridSearchButton.IsEnabled && e.Key == Key.F
+            if (IsLoaded && ModManager.IsSelected && ModGridSearchButton.IsEnabled && !CategoriesPanel.IsOpen && e.Key == Key.F
                 && (e.KeyboardDevice.IsKeyDown(Key.LeftCtrl) || e.KeyboardDevice.IsKeyDown(Key.RightCtrl)))
                 ModGrid_SearchBar.Focus();
         }
