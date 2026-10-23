@@ -176,7 +176,7 @@ namespace SparkingUnverum
         }
 
         // Same file name without versions: "szmodlib126_release.zip" and "szmodlib127_release.zip" are the same file
-        private static string BaseName(string fileName) =>
+        public static string BaseName(string fileName) =>
             Regex.Replace(Path.GetFileNameWithoutExtension(fileName ?? string.Empty).ToLowerInvariant(), @"(v(?=\d)|[\d\s._\-()\[\]])+", string.Empty);
 
         // Picks the files to download: the only one, the ones that match what was downloaded last time, or asks

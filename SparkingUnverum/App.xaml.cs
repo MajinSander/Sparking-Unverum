@@ -34,10 +34,11 @@ namespace SparkingUnverum
             }
 
             var link = e.Args.Length > 1 && e.Args[0] == "-download" ? e.Args[1] : null;
+            var import = e.Args.Length > 1 && e.Args[0] == ImportArgument ? e.Args[1] : null;
             if (!SingleInstance.TryAcquire(e.Args.Contains(RestartArgument)))
             {
                 // Already open, hand over the link (or just bring the window to the front)
-                if (!SingleInstance.Send(link ?? SingleInstance.ActivateMessage))
+                if (!SingleInstance.Send(link ?? (import != null ? ImportArgument + " " + import : SingleInstance.ActivateMessage)))
                 {
                     Loc.Init(null);
                     MessageBox.Show(Loc.T("App.AlreadyRunning"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Exclamation);
@@ -74,7 +75,10 @@ namespace SparkingUnverum
             Global.LoadConfig();
             Loc.Init(Global.config.Language);
             if (Global.config.RegisterOneClick)
+            {
                 RegistryConfig.InstallGBHandler();
+                RegistryConfig.InstallListHandler();
+            }
             Installer.UpdateVersion(target);
 
             // Opened from a 1-click install button: install the mod and skip the self update check
@@ -85,6 +89,8 @@ namespace SparkingUnverum
             SingleInstance.Listen(message => Dispatcher.InvokeAsync(() => window.HandleExternalMessage(message)));
             if (link != null)
                 window.HandleExternalMessage(link);
+            else if (import != null)
+                window.Dispatcher.InvokeAsync(() => window.OpenImport(import), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         // From the installed apps of Windows: takes the mods out of the game, then the program
@@ -160,6 +166,8 @@ namespace SparkingUnverum
         }
 
         private const string RestartArgument = "--restart";
+        // Opens a list of mods shared by a friend (.majin files open with it)
+        public const string ImportArgument = "--import";
         // Opens a new Majin Unverum and closes this one, used after changing the language
         public static void Restart()
         {

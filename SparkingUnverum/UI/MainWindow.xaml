@@ -163,6 +163,13 @@
         <!-- Top right corner, next to the tabs -->
         <StackPanel Panel.ZIndex="3" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
             <TextBox BorderThickness="0" FontSize="16" Margin="5" Background="Transparent" BorderBrush="Transparent" IsReadOnly="True" Foreground="#c2c2c2" FontWeight="Medium" Name="Stats" VerticalAlignment="Center"/>
+            <Button Name="ShareButton" Click="Share_Click" Margin="5,3,0,3" Height="30" Padding="8,0" Background="#181818" BorderBrush="#252525" Foreground="#f2f2f2"
+                    ToolTip="{l:Tr Share.ButtonTooltip}" AutomationProperties.Name="{l:Tr Share.Button}">
+                <StackPanel Orientation="Horizontal">
+                    <fa5:ImageAwesome Icon="Solid_ShareAlt" Height="15" Foreground="#f2f2f2" Margin="0,0,6,0"/>
+                    <TextBlock Text="{l:Tr Share.Button}" FontSize="15" FontWeight="Medium" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
             <Button Name="SettingsButton" Click="Settings_Click" Margin="5,3,8,3" Height="30" Padding="8,0" Background="#181818" BorderBrush="#252525" Foreground="#f2f2f2" ToolTip="{l:Tr Main.Settings}">
                 <StackPanel Orientation="Horizontal">
                     <fa5:ImageAwesome Icon="Solid_Cog" Height="16" Foreground="#f2f2f2" Margin="0,0,6,0"/>

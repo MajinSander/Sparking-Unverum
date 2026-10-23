@@ -133,6 +133,14 @@ namespace SparkingUnverum
                 handler = command?.GetValue("") as string;
             if (handler?.Contains(exe, StringComparison.OrdinalIgnoreCase) == true)
                 Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\Unverum", false);
+            // The same for .majin lists
+            using (var command = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{RegistryConfig.ListType}\shell\open\command"))
+                handler = command?.GetValue("") as string;
+            if (handler?.Contains(exe, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{RegistryConfig.ListType}", false);
+                Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\" + ModListShare.Extension, false);
+            }
 
             static string Quote(string text) => "'" + text.Replace("'", "''") + "'";
             var lines = new StringBuilder();

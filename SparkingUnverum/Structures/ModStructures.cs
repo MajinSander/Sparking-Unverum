@@ -74,6 +74,8 @@ namespace SparkingUnverum
         public List<string> KeepSeparate { get; set; } = new();
         // A test copy can leave the GameBanana 1-click buttons to the main install
         public bool RegisterOneClick { get; set; } = true;
+        // Name shown in the lists of mods the user shares
+        public string ShareAuthor { get; set; }
     }
     public class GameConfig
     {

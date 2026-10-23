@@ -132,6 +132,12 @@ namespace SparkingUnverum
             Activate();
             if (message == SingleInstance.ActivateMessage)
                 return;
+            // A .majin list opened from the Explorer
+            if (message.StartsWith(App.ImportArgument + " ", StringComparison.Ordinal))
+            {
+                OpenImport(message[(App.ImportArgument.Length + 1)..]);
+                return;
+            }
             Global.logger.WriteLine(Loc.T("Download.OneClick"), LoggerType.Info);
             var folder = await new ModDownloader().ProtocolDownload(message);
             if (folder != null)
@@ -152,6 +158,7 @@ namespace SparkingUnverum
             LauncherOptionsBox.IsEnabled = !value;
             ModGridSearchButton.IsEnabled = !value;
             SettingsButton.IsEnabled = !value;
+            ShareButton.IsEnabled = !value;
             CategoriesTab.IsEnabled = !value;
             CategoriesPanel.IsEnabled = !value;
         }
@@ -541,6 +548,33 @@ namespace SparkingUnverum
 
         private void GameBanana_Click(object sender, RoutedEventArgs e) => OpenUrl($"https://gamebanana.com/mods/games/{SparkingGame.GameBananaId}");
 
+        // ---------- Sharing the list of mods ----------
+
+        private void Share_Click(object sender, RoutedEventArgs e)
+        {
+            var share = new ShareWindow { Owner = this };
+            share.ShowDialog();
+            if (share.OpenImport)
+                OpenImport(null);
+        }
+
+        public void OpenImport(string file)
+        {
+            if (busy)
+                return;
+            new ImportListWindow(AddLoadout, file) { Owner = this }.ShowDialog();
+        }
+
+        // A loadout made from a friend's list, shown right away
+        private void AddLoadout(string name, ObservableCollection<Mod> loadout)
+        {
+            Global.Game.Loadouts[name] = loadout;
+            Global.LoadoutItems.Add(name);
+            LoadoutsBox.SelectedItem = name;
+            ShowMetadata(null);
+            Global.UpdateConfig();
+        }
+
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
             var settings = new SettingsWindow { Owner = this, Merge = MergeGroup };
@@ -721,7 +755,15 @@ namespace SparkingUnverum
             e.Handled = true;
             DropBox.Visibility = Visibility.Collapsed;
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                await CreateMod((string[])e.Data.GetData(DataFormats.FileDrop, false));
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+                // A list shared by a friend, not a mod
+                var shared = files.FirstOrDefault(f => Path.GetExtension(f).Equals(ModListShare.Extension, StringComparison.OrdinalIgnoreCase));
+                if (shared != null)
+                    OpenImport(shared);
+                else
+                    await CreateMod(files);
+            }
         }
 
         private static readonly string[] ArchiveExtensions = { ".zip", ".rar", ".7z" };
