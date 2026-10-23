@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -14,17 +15,32 @@ using SparkingUnverum.UI;
 
 namespace SparkingUnverum
 {
-    // Self updates come only from the GitHub releases of Sparking Unverum, never from the classic Unverum on GameBanana
+    // Self updates come only from the GitHub releases of Majin Unverum, never from the classic Unverum on GameBanana
     public static class AutoUpdater
     {
-        // Name of the zip attached to every GitHub release, its files are at the root of the zip
-        private static readonly Regex AssetName = new(@"^SparkingUnverum.*\.zip$", RegexOptions.IgnoreCase);
+        // Files attached to every GitHub release: two zips with the files at their root and the single .exe
+        private static readonly Regex AssetName = new(@"^(Majin|Sparking)Unverum.*\.(zip|exe)$", RegexOptions.IgnoreCase);
+        private const string ExeName = "MajinUnverum.exe";
+
+        // The single .exe has no dll next to it, the standalone folder carries .NET inside
+        private enum InstallKind { Framework, Standalone, SingleFile }
+        private static InstallKind Kind =>
+            !File.Exists(Path.Combine(Global.assemblyLocation, Assembly.GetExecutingAssembly().GetName().Name + ".dll")) ? InstallKind.SingleFile
+            : File.Exists(Path.Combine(Global.assemblyLocation, "coreclr.dll")) ? InstallKind.Standalone
+            : InstallKind.Framework;
+
+        private static bool Fits(string asset, InstallKind kind) => kind switch
+        {
+            InstallKind.SingleFile => asset.EndsWith(".exe", StringComparison.OrdinalIgnoreCase),
+            InstallKind.Standalone => asset.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && asset.Contains("-standalone", StringComparison.OrdinalIgnoreCase),
+            _ => asset.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && !asset.Contains("-standalone", StringComparison.OrdinalIgnoreCase)
+        };
         private static readonly HttpClient client = CreateClient();
 
         private static HttpClient CreateClient()
         {
             var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd($"SparkingUnverum/{App.Version}");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd($"MajinUnverum/{App.Version}");
             http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
             return http;
         }
@@ -87,12 +103,12 @@ namespace SparkingUnverum
                 var prerelease = release.TryGetProperty("prerelease", out var pre) && pre.GetBoolean();
                 if ((prerelease || version.IsPrerelease) && current != null && !current.IsPrerelease)
                     continue;
-                // Same kind of package as the installed one (standalone carries .NET inside)
-                var standalone = File.Exists(Path.Combine(Global.assemblyLocation, "coreclr.dll"));
+                // Same kind of package as the installed one
+                var kind = Kind;
                 foreach (var asset in release.GetProperty("assets").EnumerateArray())
                 {
                     var name = asset.GetProperty("name").GetString();
-                    if (!AssetName.IsMatch(name ?? string.Empty) || name.Contains("-standalone", StringComparison.OrdinalIgnoreCase) != standalone)
+                    if (!AssetName.IsMatch(name ?? string.Empty) || !Fits(name, kind))
                         continue;
                     releases.Add(new Release
                     {
@@ -128,14 +144,16 @@ namespace SparkingUnverum
                 return false;
             }
             var changelog = new ChangelogBox(new GameBananaItemUpdate { Title = $"v{release.Version}", Text = release.Notes ?? string.Empty },
-                "Sparking Unverum", Loc.T("AppUpdate.Available", release.Version), null);
+                "Majin Unverum", Loc.T("AppUpdate.Available", release.Version), null);
             changelog.ShowDialog();
             if (!changelog.YesNo)
                 return false;
 
-            var work = Path.Combine(Path.GetTempPath(), "SparkingUnverumUpdate");
+            var kind = Kind;
+            var work = Path.Combine(Path.GetTempPath(), "MajinUnverumUpdate");
             var zip = Path.Combine(work, release.AssetName);
             var extracted = Path.Combine(work, release.Version.ToString());
+            string newExe = null;
             var cancellation = new CancellationTokenSource();
             var progressBox = new ProgressBox(cancellation) { Title = Loc.T("AppUpdate.Title") };
             progressBox.progressTitle.Text = Loc.T("AppUpdate.Downloading", release.Version);
@@ -153,16 +171,26 @@ namespace SparkingUnverum
                         progressBox.progressText.Text = Loc.T("Download.Progress", Math.Round(p.Percentage * 100, 2),
                             StringConverters.FormatSize(p.DownloadedBytes), StringConverters.FormatSize(p.TotalBytes));
                     }), cancellation.Token);
-                await Task.Run(() =>
+                if (kind == InstallKind.SingleFile)
                 {
-                    ArchiveHelper.Extract(zip, extracted);
-                    // Zips with a single folder inside
-                    var entries = Directory.GetFileSystemEntries(extracted);
-                    if (entries.Length == 1 && Directory.Exists(entries[0]))
-                        extracted = entries[0];
-                });
-                if (!File.Exists(Path.Combine(extracted, Path.GetFileName(Environment.ProcessPath))))
-                    throw new InvalidDataException(Loc.T("AppUpdate.InvalidPackage"));
+                    // The download is the new program itself
+                    if (!IsProgram(zip))
+                        throw new InvalidDataException(Loc.T("AppUpdate.InvalidPackage"));
+                }
+                else
+                {
+                    await Task.Run(() =>
+                    {
+                        ArchiveHelper.Extract(zip, extracted);
+                        // Zips with a single folder inside
+                        var entries = Directory.GetFileSystemEntries(extracted);
+                        if (entries.Length == 1 && Directory.Exists(entries[0]))
+                            extracted = entries[0];
+                    });
+                    newExe = new[] { Path.GetFileName(Environment.ProcessPath), ExeName }.FirstOrDefault(name => File.Exists(Path.Combine(extracted, name)));
+                    if (newExe == null)
+                        throw new InvalidDataException(Loc.T("AppUpdate.InvalidPackage"));
+                }
             }
             catch (OperationCanceledException)
             {
@@ -172,7 +200,7 @@ namespace SparkingUnverum
             catch (Exception e)
             {
                 Global.logger.WriteLine(Loc.T("AppUpdate.Error", e.Message), LoggerType.Error);
-                MessageBox.Show(Loc.T("AppUpdate.Error", e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("AppUpdate.Error", e.Message), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
             finally
@@ -180,16 +208,26 @@ namespace SparkingUnverum
                 progressBox.finished = true;
                 progressBox.Close();
             }
-            MessageBox.Show(Loc.T("AppUpdate.Restart"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
-            LaunchUpdater(extracted, work, Global.assemblyLocation, Environment.ProcessPath, Environment.ProcessId);
+            MessageBox.Show(Loc.T("AppUpdate.Restart"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (kind == InstallKind.SingleFile)
+                LaunchExeUpdater(zip, work, Environment.ProcessPath, Environment.ProcessId);
+            else
+                LaunchUpdater(extracted, work, Global.assemblyLocation, Path.Combine(Global.assemblyLocation, newExe), Environment.ProcessId);
             return true;
         }
 
-        // Copies the new files once this process has closed and opens Sparking Unverum again
+        // A Windows program starts with "MZ"
+        private static bool IsProgram(string file)
+        {
+            using var stream = File.OpenRead(file);
+            return stream.Length > 1_000_000 && stream.ReadByte() == 'M' && stream.ReadByte() == 'Z';
+        }
+
+        private static string Quote(string text) => "'" + text.Replace("'", "''") + "'";
+
+        // Copies the new files once this process has closed and opens Majin Unverum again
         public static void LaunchUpdater(string source, string work, string appDir, string exe, int pid)
         {
-            static string Quote(string text) => "'" + text.Replace("'", "''") + "'";
-            var script = Path.Combine(Path.GetTempPath(), "SparkingUnverumUpdate.ps1");
             var lines = new StringBuilder();
             lines.AppendLine("$ErrorActionPreference = 'SilentlyContinue'");
             lines.AppendLine($"Wait-Process -Id {pid} -Timeout 120");
@@ -198,6 +236,28 @@ namespace SparkingUnverum
             lines.AppendLine($"Start-Process -FilePath {Quote(exe)} -WorkingDirectory {Quote(appDir)}");
             lines.AppendLine($"Remove-Item -LiteralPath {Quote(work)} -Recurse -Force");
             lines.AppendLine("Remove-Item -LiteralPath $PSCommandPath -Force");
+            RunScript(lines);
+        }
+
+        // The single .exe: puts the new one in place of this one once it has closed and opens it
+        public static void LaunchExeUpdater(string newExe, string work, string exe, int pid)
+        {
+            var lines = new StringBuilder();
+            lines.AppendLine("$ErrorActionPreference = 'SilentlyContinue'");
+            lines.AppendLine($"Wait-Process -Id {pid} -Timeout 120");
+            lines.AppendLine("Start-Sleep -Milliseconds 500");
+            lines.AppendLine("for ($i = 0; $i -lt 30; $i++) {");
+            lines.AppendLine($"    try {{ Copy-Item -LiteralPath {Quote(newExe)} -Destination {Quote(exe)} -Force -ErrorAction Stop; break }} catch {{ Start-Sleep -Seconds 1 }}");
+            lines.AppendLine("}");
+            lines.AppendLine($"Start-Process -FilePath {Quote(exe)} -WorkingDirectory {Quote(Path.GetDirectoryName(exe))}");
+            lines.AppendLine($"Remove-Item -LiteralPath {Quote(work)} -Recurse -Force");
+            lines.AppendLine("Remove-Item -LiteralPath $PSCommandPath -Force");
+            RunScript(lines);
+        }
+
+        private static void RunScript(StringBuilder lines)
+        {
+            var script = Path.Combine(Path.GetTempPath(), "MajinUnverumUpdate.ps1");
             // Windows PowerShell needs the BOM to read accents in paths
             File.WriteAllText(script, lines.ToString(), new UTF8Encoding(true));
             Process.Start(new ProcessStartInfo("powershell.exe")

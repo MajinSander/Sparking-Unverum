@@ -49,7 +49,7 @@ namespace SparkingUnverum.UI
             if ((sender as FrameworkElement)?.DataContext is not BackupFolder backup || !backup.CanClean)
                 return;
             if (MessageBox.Show(Loc.T("Backups.CleanConfirm", backup.Repeated.Count, StringConverters.FormatSize(backup.RepeatedSize)),
-                "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
             IsEnabled = false;
             try
@@ -74,7 +74,7 @@ namespace SparkingUnverum.UI
             if ((sender as FrameworkElement)?.DataContext is not BackupFolder backup)
                 return;
             if (MessageBox.Show(Loc.T("Backups.RecycleConfirm", backup.Name, StringConverters.FormatSize(backup.Size)),
-                "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
             try
             {
@@ -86,7 +86,7 @@ namespace SparkingUnverum.UI
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(ex.Message, "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             await Load();
         }

@@ -21,7 +21,7 @@ namespace SparkingUnverum
 {
     public partial class MainWindow : Window
     {
-        private static readonly Uri DefaultPreview = new("pack://application:,,,/SparkingUnverum;component/Assets/preview.png");
+        private static readonly Uri DefaultPreview = new("pack://application:,,,/MajinUnverum;component/Assets/preview.png");
         private FileSystemWatcher ModsWatcher;
         private readonly FlowDocument defaultFlow = new();
         private readonly ObservableCollection<string> LauncherOptions = new() { Loc.T("Main.LaunchExe"), Loc.T("Main.LaunchSteam") };
@@ -114,7 +114,7 @@ namespace SparkingUnverum
             if (groups.Count > 0)
                 Global.logger.WriteLine(Loc.T("Merge.Hint", groups.Count, string.Join(", ", groups.Select(g => g.Title))), LoggerType.Info);
 
-            // First Sparking Unverum itself, then the mods, so their questions don't overlap
+            // First Majin Unverum itself, then the mods, so their questions don't overlap
             if (checkAppUpdate && Global.config.CheckAppUpdates && await AutoUpdater.CheckForUpdate(true))
             {
                 Close();
@@ -124,7 +124,7 @@ namespace SparkingUnverum
                 await CheckModUpdates();
         }
 
-        // Messages from other launches of Sparking Unverum, like 1-click install links
+        // Messages from other launches of Majin Unverum, like 1-click install links
         public async void HandleExternalMessage(string message)
         {
             if (WindowState == WindowState.Minimized)
@@ -377,7 +377,7 @@ namespace SparkingUnverum
         {
             if (!GameProcess.IsRunning())
                 return false;
-            MessageBox.Show(Loc.T("Game.Running", Loc.T(actionKey)), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Loc.T("Game.Running", Loc.T(actionKey)), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
             return true;
         }
 
@@ -420,7 +420,7 @@ namespace SparkingUnverum
 
         private async void Setup_Click(object sender, RoutedEventArgs e)
         {
-            if (Setup.IsComplete && MessageBox.Show(Loc.T("Setup.Again", Global.Game.Launcher), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+            if (Setup.IsComplete && MessageBox.Show(Loc.T("Setup.Again", Global.Game.Launcher), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
                 return;
             SetBusy(true);
             await Task.Run(Setup.Run);
@@ -437,7 +437,7 @@ namespace SparkingUnverum
             }
             if (GameProcess.IsRunning())
             {
-                MessageBox.Show(Loc.T("Game.RunningPlay"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Game.RunningPlay"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             SetBusy(true);
@@ -447,7 +447,7 @@ namespace SparkingUnverum
             if (Directory.Exists(paths.TildeMods))
             {
                 var manual = Directory.GetDirectories(paths.TildeMods).Where(x => !ModLoader.PriorityFolder.IsMatch(Path.GetFileName(x))).ToList();
-                if (manual.Count > 0 && MessageBox.Show(Loc.T("Build.ManualModsFound", paths.TildeMods), "Sparking Unverum",
+                if (manual.Count > 0 && MessageBox.Show(Loc.T("Build.ManualModsFound", paths.TildeMods), "Majin Unverum",
                     MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     foreach (var folder in manual)
@@ -468,7 +468,7 @@ namespace SparkingUnverum
                 Global.logger.WriteLine(Loc.T("Build.ConflictSummary", result.Conflicts), LoggerType.Warning);
             if (result.MissingModLoader && !installingModLoader)
             {
-                if (MessageBox.Show(Loc.T("Build.InstallModLoader"), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                if (MessageBox.Show(Loc.T("Build.InstallModLoader"), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     installingModLoader = true;
                     try
@@ -569,7 +569,7 @@ namespace SparkingUnverum
             catch (Exception e)
             {
                 Global.logger.WriteLine(Loc.T("Merge.Error", group.Title, e.Message), LoggerType.Error);
-                MessageBox.Show(Loc.T("Merge.Error", group.Title, e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("Merge.Error", group.Title, e.Message), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
             finally
@@ -933,7 +933,7 @@ namespace SparkingUnverum
             Global.UpdateConfig();
             if (Global.ModList.Count > 0)
                 return;
-            if (MessageBox.Show(Loc.T("Import.Offer"), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes
+            if (MessageBox.Show(Loc.T("Import.Offer"), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes
                 && ClassicImport.Run(this))
             {
                 RefreshAll();
@@ -1033,7 +1033,7 @@ namespace SparkingUnverum
                         Global.logger.WriteLine(Loc.T("Loadout.CantDeleteLast"), LoggerType.Error);
                         return;
                     }
-                    if (MessageBox.Show(Loc.T("Loadout.DeleteConfirm", game.CurrentLoadout), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    if (MessageBox.Show(Loc.T("Loadout.DeleteConfirm", game.CurrentLoadout), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                         return;
                     var current = game.CurrentLoadout;
                     game.Loadouts.Remove(current);
@@ -1097,13 +1097,13 @@ namespace SparkingUnverum
                 return;
             if (header.Column.DisplayIndex == 1)
             {
-                if (MessageBox.Show(Loc.T("Main.SortConfirm"), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                if (MessageBox.Show(Loc.T("Main.SortConfirm"), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
                 sorted = Global.ModList.OrderBy(x => x.name, new NaturalSort()).ToList();
             }
             else
             {
-                if (MessageBox.Show(Loc.T("Main.GroupConfirm"), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                if (MessageBox.Show(Loc.T("Main.GroupConfirm"), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
                 sorted = Global.ModList.OrderByDescending(x => x.enabled).ToList();
             }

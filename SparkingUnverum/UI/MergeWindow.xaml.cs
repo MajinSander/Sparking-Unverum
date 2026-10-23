@@ -48,7 +48,7 @@ namespace SparkingUnverum.UI
             var missing = group.Folders.Count(f => f.SelectedFile == null);
             var text = Loc.T("Merge.Confirm", group.Folders.Count, group.MergedName)
                 + (missing > 0 ? "\n\n" + Loc.T("Merge.MissingDownload", missing) : string.Empty);
-            if (MessageBox.Show(text, "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            if (MessageBox.Show(text, "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
             IsEnabled = false;
             try

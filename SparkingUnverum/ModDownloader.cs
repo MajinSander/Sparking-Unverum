@@ -45,7 +45,7 @@ namespace SparkingUnverum
             {
                 // Only Sparking! ZERO mods are supported
                 Global.logger.WriteLine(Loc.T("Download.WrongGame", submission.Title, submission.Game.Name), LoggerType.Warning);
-                MessageBox.Show(Loc.T("Download.WrongGame", submission.Title, submission.Game.Name), "Sparking Unverum",
+                MessageBox.Show(Loc.T("Download.WrongGame", submission.Title, submission.Game.Name), "Majin Unverum",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return null;
             }
@@ -86,7 +86,7 @@ namespace SparkingUnverum
             catch (Exception e)
             {
                 Global.logger.WriteLine(Loc.T("Download.FetchError", e.Message), LoggerType.Error);
-                MessageBox.Show(Loc.T("Download.FetchError", e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("Download.FetchError", e.Message), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return null;
             }
         }
@@ -97,7 +97,7 @@ namespace SparkingUnverum
             if (submission.IsUnavailable)
             {
                 Global.logger.WriteLine(Loc.T("Download.Unavailable", submission.Title), LoggerType.Warning);
-                MessageBox.Show(Loc.T("Download.Unavailable", submission.Title), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Download.Unavailable", submission.Title), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return null;
             }
             if (!submission.HasFiles)
@@ -105,7 +105,7 @@ namespace SparkingUnverum
                 if (submission.HasAltLinks)
                     new AltLinkWindow(submission.AlternateFileSources, submission.Title, Global.ModsPath, submission.ProfileUrl).ShowDialog();
                 else
-                    MessageBox.Show(Loc.T("Download.NoFiles", submission.Title), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(Loc.T("Download.NoFiles", submission.Title), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return null;
             }
 
@@ -119,7 +119,7 @@ namespace SparkingUnverum
             var replace = false;
             if (existing != null)
             {
-                var answer = MessageBox.Show(Loc.T("Download.AlreadyInstalled", submission.Title, existing), "Sparking Unverum",
+                var answer = MessageBox.Show(Loc.T("Download.AlreadyInstalled", submission.Title, existing), "Majin Unverum",
                     MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                 if (answer == MessageBoxResult.Cancel)
                     return null;
@@ -127,7 +127,7 @@ namespace SparkingUnverum
                 {
                     if (GameProcess.IsRunning())
                     {
-                        MessageBox.Show(Loc.T("Game.Running", Loc.T("Game.ActionUpdate")), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(Loc.T("Game.Running", Loc.T("Game.ActionUpdate")), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                         return null;
                     }
                     folderName = existing;
@@ -167,7 +167,7 @@ namespace SparkingUnverum
                 catch (Exception e)
                 {
                     Global.logger.WriteLine(Loc.T("Download.ExtractError", file.FileName, e.Message), LoggerType.Error);
-                    MessageBox.Show(Loc.T("Download.ExtractError", file.FileName, e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(Loc.T("Download.ExtractError", file.FileName, e.Message), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 finally
                 {
@@ -300,7 +300,7 @@ namespace SparkingUnverum
             catch (Exception e)
             {
                 Global.logger.WriteLine(Loc.T("Download.Error", fileName, e.Message), LoggerType.Error);
-                MessageBox.Show(Loc.T("Download.Error", fileName, e.Message), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("Download.Error", fileName, e.Message), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {

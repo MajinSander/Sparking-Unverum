@@ -33,7 +33,7 @@ namespace SparkingUnverum
     public static class ModLoader
     {
         private static string ManifestPath => Path.Combine(Global.assemblyLocation, "deployed.json");
-        // Priority folders created by Sparking Unverum and the classic Unverum inside ~mods
+        // Priority folders created by Majin Unverum and the classic Unverum inside ~mods
         public static readonly Regex PriorityFolder = new(@"^(~*[a-z]|--Base--)$");
         private static readonly string[] Ue4ssFiles = { "opengl32.dll", "patternsleuth_bind.dll", "ue4ss.dll", "UE4SS-settings.ini", "dwmapi.dll" };
         private static readonly string[] DefaultUe4ssMods =
@@ -265,7 +265,7 @@ namespace SparkingUnverum
             }
         }
 
-        // Removes every mod from the game. Anything Sparking Unverum didn't put there is moved to Backups instead of deleted
+        // Removes every mod from the game. Anything Majin Unverum didn't put there is moved to Backups instead of deleted
         public static bool Restart(GamePaths paths, string movies, string splash, string sound)
         {
             try
@@ -289,7 +289,7 @@ namespace SparkingUnverum
             return true;
         }
 
-        // Deletes what the previous build installed and isn't needed anymore (keep), backs up files Sparking Unverum didn't install.
+        // Deletes what the previous build installed and isn't needed anymore (keep), backs up files Majin Unverum didn't install.
         // Returns how many files were deleted
         private static int Clean(GamePaths paths, HashSet<string> keep, HashSet<string> old, string movies, string splash, string sound)
         {
@@ -303,7 +303,7 @@ namespace SparkingUnverum
                     removed++;
                 }
 
-            // ~mods: the priority folders belong to Sparking Unverum (or the classic Unverum), other things were put there by hand
+            // ~mods: the priority folders belong to Majin Unverum (or the classic Unverum), other things were put there by hand
             if (Directory.Exists(paths.TildeMods))
             {
                 foreach (var dir in Directory.GetDirectories(paths.TildeMods, "*", TopNoLinks))
@@ -652,7 +652,7 @@ namespace SparkingUnverum
                 }
 
                 // UE4SS itself is only installed when a mod needs it
-                var ue4ssSource = Path.Combine(Global.assemblyLocation, "Dependencies", "ue4ss");
+                var ue4ssSource = ue4ss ? Dependencies.Ue4ss() : null;
                 if (ue4ss)
                     deployment.CopyDirectory(ue4ssSource, paths.Win64, "UE4SS",
                         file => Path.GetFileName(file).Equals("mods.txt", StringComparison.OrdinalIgnoreCase));

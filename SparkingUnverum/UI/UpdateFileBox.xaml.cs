@@ -67,7 +67,7 @@ namespace SparkingUnverum.UI
             SelectedFiles = chosen.Select(x => x.File).ToList();
             if (SelectedFiles.Count == 0)
             {
-                MessageBox.Show(Loc.T("Files.NoneSelected"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Files.NoneSelected"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             FolderName = string.IsNullOrWhiteSpace(ModFolderNameTextBox.Text) ? null : ModFolderNameTextBox.Text.Trim();

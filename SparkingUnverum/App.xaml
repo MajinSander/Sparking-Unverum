@@ -9,7 +9,7 @@
                 <ResourceDictionary Source="Controls/ComboBox.xaml"/>
                 <ResourceDictionary Source="Controls/ScrollViewer.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <!-- Sparking Unverum colors -->
+            <!-- Majin Unverum colors -->
             <SolidColorBrush x:Key="AccentBrush" Color="#F28C1E"/>
             <SolidColorBrush x:Key="AccentDarkBrush" Color="#C25E0C"/>
         </ResourceDictionary>

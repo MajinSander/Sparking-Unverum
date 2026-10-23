@@ -17,7 +17,7 @@ namespace SparkingUnverum.UI
             InitializeComponent();
             try
             {
-                PreviewImage.Source = new BitmapImage(preview ?? new Uri("pack://application:,,,/SparkingUnverum;component/Assets/preview.png"));
+                PreviewImage.Source = new BitmapImage(preview ?? new Uri("pack://application:,,,/MajinUnverum;component/Assets/preview.png"));
                 PreviewImage.Visibility = Visibility.Visible;
             }
             catch { }

@@ -43,7 +43,7 @@ namespace SparkingUnverum.UI
             Selected = updates.Where(x => x.IsSelected).ToList();
             if (Selected.Count == 0)
             {
-                MessageBox.Show(Loc.T("Updates.NoneSelected"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Updates.NoneSelected"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             Choice = choice;

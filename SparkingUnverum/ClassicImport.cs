@@ -22,12 +22,12 @@ namespace SparkingUnverum
             var classicConfig = Path.Combine(folder, "Config.json");
             if (!Directory.Exists(classicMods) && !File.Exists(classicConfig))
             {
-                MessageBox.Show(Loc.T("Import.NotFound", folder), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Loc.T("Import.NotFound", folder), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
             if (Path.GetFullPath(classicMods).TrimEnd('\\').Equals(Path.GetFullPath(Global.ModsPath).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(Loc.T("Import.SameFolder"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Loc.T("Import.SameFolder"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
                 return false;
             }
             var copied = 0;
@@ -90,7 +90,7 @@ namespace SparkingUnverum
             }
             Global.UpdateConfig();
             Global.logger.WriteLine(Loc.T("Import.Done", copied, loadouts), LoggerType.Info);
-            MessageBox.Show(Loc.T("Import.Done", copied, loadouts), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Loc.T("Import.Done", copied, loadouts), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Information);
             return copied > 0 || loadouts > 0;
         }
     }

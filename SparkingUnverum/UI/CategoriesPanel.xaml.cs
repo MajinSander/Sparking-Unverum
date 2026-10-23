@@ -480,7 +480,7 @@ namespace SparkingUnverum.UI
             menu.Items.Add(new Separator());
             menu.Items.Add(Item(Loc.T("Categories.Delete"), () =>
             {
-                if (MessageBox.Show(Loc.T("Categories.DeleteConfirm", folder.Name), "Sparking Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                if (MessageBox.Show(Loc.T("Categories.DeleteConfirm", folder.Name), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
                 Categories.Data.Folders.Remove(folder);
                 Categories.Save();

@@ -23,7 +23,7 @@ namespace SparkingUnverum
         WiPs
     }
 
-    // Every call Sparking Unverum makes to GameBanana goes through here (API v11)
+    // Every call Majin Unverum makes to GameBanana goes through here (API v11)
     public static class GameBananaApi
     {
         private const string Base = "https://gamebanana.com/apiv11";
@@ -33,7 +33,7 @@ namespace SparkingUnverum
         private static HttpClient CreateClient()
         {
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd($"SparkingUnverum/{App.Version}");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd($"MajinUnverum/{App.Version}");
             return client;
         }
 

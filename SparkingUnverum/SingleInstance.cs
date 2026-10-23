@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace SparkingUnverum
 {
-    // Keeps a single Sparking Unverum open. Later launches (for example from a 1-click install button)
+    // Keeps a single Majin Unverum open. Later launches (for example from a 1-click install button)
     // hand their arguments to the running window through a named pipe and exit
     public static class SingleInstance
     {
-        private const string Name = "SparkingUnverum.SingleInstance";
+        private const string Name = "MajinUnverum.SingleInstance";
         public const string ActivateMessage = "--activate";
         private static Mutex mutex;
 

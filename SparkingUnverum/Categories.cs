@@ -75,7 +75,7 @@ namespace SparkingUnverum
         private void Changed(string property) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
     }
 
-    // Categories.json, apart from SparkingUnverum.json so older versions never drop it
+    // Categories.json, apart from MajinUnverum.json so older versions never drop it
     public class CategoryData
     {
         public List<ModCategory> Folders { get; set; } = new();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -31,12 +32,17 @@ namespace SparkingUnverum
                 if (!SingleInstance.Send(link ?? SingleInstance.ActivateMessage))
                 {
                     Loc.Init(null);
-                    MessageBox.Show(Loc.T("App.AlreadyRunning"), "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    MessageBox.Show(Loc.T("App.AlreadyRunning"), "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 }
                 Shutdown();
                 return;
             }
 
+            if (!FolderAccepted())
+            {
+                Shutdown();
+                return;
+            }
             Global.LoadConfig();
             Loc.Init(Global.config.Language);
             RegistryConfig.InstallGBHandler();
@@ -50,8 +56,36 @@ namespace SparkingUnverum
                 window.HandleExternalMessage(link);
         }
 
+        // Mods, loadouts and settings live next to the program: the first time, suggest its own folder
+        // instead of Downloads, the Desktop or a temporary folder
+        private static bool FolderAccepted()
+        {
+            if (File.Exists(Global.ConfigPath) || File.Exists(Global.PreviousConfigPath) || File.Exists(Global.ClassicConfigPath))
+                return true;
+            var folder = Path.GetFullPath(Global.assemblyLocation).TrimEnd(Path.DirectorySeparatorChar);
+            var crowded = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory)
+            }.Where(f => !string.IsNullOrEmpty(f)).Select(f => Path.GetFullPath(f).TrimEnd(Path.DirectorySeparatorChar));
+            var temp = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar);
+            if (!crowded.Any(f => f.Equals(folder, StringComparison.OrdinalIgnoreCase))
+                && !folder.StartsWith(temp, StringComparison.OrdinalIgnoreCase))
+                return true;
+            Loc.Init(null);
+            if (MessageBox.Show(Loc.T("App.FolderWarning", folder), "Majin Unverum", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                return true;
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{Environment.ProcessPath}\"");
+            }
+            catch { }
+            return false;
+        }
+
         private const string RestartArgument = "--restart";
-        // Opens a new Sparking Unverum and closes this one, used after changing the language
+        // Opens a new Majin Unverum and closes this one, used after changing the language
         public static void Restart()
         {
             try
@@ -66,7 +100,7 @@ namespace SparkingUnverum
         {
             Global.logger?.WriteLine($"{e.Exception.Message}\n{e.Exception.StackTrace}", LoggerType.Error);
             MessageBox.Show(Loc.T("App.UnhandledException", e.Exception.Message, e.Exception.InnerException?.Message, e.Exception.StackTrace),
-                "Sparking Unverum", MessageBoxButton.OK, MessageBoxImage.Error);
+                "Majin Unverum", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
             (Current?.MainWindow as MainWindow)?.SetBusy(false);
         }

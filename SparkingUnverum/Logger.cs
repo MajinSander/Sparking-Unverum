@@ -16,7 +16,7 @@ namespace SparkingUnverum
     public class Logger
     {
         private readonly RichTextBox outputWindow;
-        private readonly string logFile = Path.Combine(Global.assemblyLocation, "SparkingUnverum.log");
+        private readonly string logFile = Path.Combine(Global.assemblyLocation, "MajinUnverum.log");
         public Logger(RichTextBox textBox)
         {
             outputWindow = textBox;

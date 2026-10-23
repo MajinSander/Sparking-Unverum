@@ -16,14 +16,16 @@ namespace SparkingUnverum
         public static ObservableCollection<string> LoadoutItems;
         public static ObservableCollection<Mod> ModList;
 
-        public static string ConfigPath => Path.Combine(assemblyLocation, "SparkingUnverum.json");
+        public static string ConfigPath => Path.Combine(assemblyLocation, "MajinUnverum.json");
+        // Name of the config before the program was called Majin Unverum
+        public static string PreviousConfigPath => Path.Combine(assemblyLocation, "SparkingUnverum.json");
         // Config file written by the classic Unverum, only read to import Sparking! ZERO settings
         public static string ClassicConfigPath => Path.Combine(assemblyLocation, "Config.json");
         public static string ModsPath => Path.Combine(assemblyLocation, "Mods", SparkingGame.ConfigKey);
         public static string DownloadsPath => Path.Combine(assemblyLocation, "Downloads");
         public static string BackupsPath => Path.Combine(assemblyLocation, "Backups");
 
-        // Settings of the game, Sparking Unverum only manages DRAGON BALL Sparking! ZERO
+        // Settings of the game, Majin Unverum only manages DRAGON BALL Sparking! ZERO
         public static GameConfig Game => config.Configs[SparkingGame.ConfigKey];
 
         public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -31,7 +33,7 @@ namespace SparkingUnverum
         public static void LoadConfig()
         {
             config = null;
-            var path = File.Exists(ConfigPath) ? ConfigPath : null;
+            var path = File.Exists(ConfigPath) ? ConfigPath : File.Exists(PreviousConfigPath) ? PreviousConfigPath : null;
             var imported = false;
             if (path == null && File.Exists(ClassicConfigPath))
             {

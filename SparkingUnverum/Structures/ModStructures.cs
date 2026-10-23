@@ -46,9 +46,9 @@ namespace SparkingUnverum
         public string filedescription { get; set; }
         public Uri homepage { get; set; }
         public DateTime? lastupdate { get; set; }
-        // Sparking Unverum only: GameBanana files that were downloaded
+        // Majin Unverum only: GameBanana files that were downloaded
         public List<string> files { get; set; }
-        // Sparking Unverum only: when the files were extracted, newer files in the mod were written by the game or the user
+        // Majin Unverum only: when the files were extracted, newer files in the mod were written by the game or the user
         public DateTime? installed { get; set; }
     }
     public class Config
@@ -98,7 +98,7 @@ namespace SparkingUnverum
         public string OptionSubText { get; set; }
         public int Index { get; set; }
     }
-    // Files written to the game folder by the last build so the next one only removes what Sparking Unverum put there
+    // Files written to the game folder by the last build so the next one only removes what Majin Unverum put there
     public class DeployManifest
     {
         public string GameRoot { get; set; }
@@ -107,7 +107,7 @@ namespace SparkingUnverum
         public List<string> Junctions { get; set; } = new();
         // Plugin folder in the game -> folder of the mod it comes from, to save back what the game writes there
         public Dictionary<string, string> Folders { get; set; } = new();
-        // Files Sparking Unverum edits after installing them (JsonFiles.json, mods.txt), never saved back into mods
+        // Files Majin Unverum edits after installing them (JsonFiles.json, mods.txt), never saved back into mods
         public List<string> Generated { get; set; } = new();
         [JsonIgnore]
         public HashSet<string> FileSet => new(Files, StringComparer.OrdinalIgnoreCase);

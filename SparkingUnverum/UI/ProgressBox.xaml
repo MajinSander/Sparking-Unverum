@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SparkingUnverum" WindowStartupLocation="CenterScreen"
         mc:Ignorable="d" Background="#202020" Closing="Window_Closing"
-        Title="Sparking Unverum" Icon="../Assets/app.ico" ResizeMode="NoResize" Height="160" Width="500">
+        Title="Majin Unverum" Icon="../Assets/app.ico" ResizeMode="NoResize" Height="160" Width="500">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>

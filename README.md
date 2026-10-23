@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/banner.png" width="600" alt="Sparking Unverum"></p>
+<p align="center"><img src="docs/banner.png" width="600" alt="Majin Unverum"></p>
 
-# Sparking Unverum
+# Majin Unverum
 
 Gestor de mods para **DRAGON BALL Sparking! ZERO**, por **Majin**.
 *English below.*
@@ -11,7 +11,7 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 
 - Solo para Sparking! ZERO: más ligero y sin opciones de otros juegos.
 - Tienda conectada a la API v11 de GameBanana, con destacados, novedades, más descargados, categorías, sonidos y búsqueda.
-- Botones de 1 clic de GameBanana: si Sparking Unverum ya está abierto, el mod entra en esa ventana.
+- Botones de 1 clic de GameBanana: si Majin Unverum ya está abierto, el mod entra en esa ventana.
 - Elige qué archivos de un mod descargar. Si el mod ya estaba instalado, puedes reemplazarlo sin perder su posición.
 - Detecta el juego automáticamente en cualquier biblioteca de Steam.
 - **Nunca borra lo que no es suyo**: lo que hubiera en las carpetas de mods del juego se mueve a `Backups`.
@@ -28,23 +28,32 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - **Mis mods** muestra lo que ocupa cada mod y filtra por activos, desactivados, con actualización, no disponibles o sin vincular a GameBanana.
 - **Libera espacio de las copias de seguridad**: detecta qué archivos de `Backups` ya están idénticos en tus mods y borra solo esos.
 - No toca los mods mientras el juego está abierto.
+- **Categorías**: ordena tus mods en carpetas de personajes y generales (mecánicas, mapas, interfaz, sonido...) arrastrando sus fotos, con un filtro que busca mientras escribes. Un mod puede estar en varias carpetas y cada carpeta cuenta cuántos mods tiene y cuántos están activos.
 
-## Requisitos
+## Descarga
 
-- Windows 10/11 de 64 bits.
-- Descarga `SparkingUnverum-vX.Y.Z-standalone.zip` si no quieres instalar nada más. La versión ligera, `SparkingUnverum-vX.Y.Z.zip`, necesita el [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
+Todo está en [Releases](https://github.com/MajinSander/Sparking-Unverum/releases/latest). Hace falta Windows 10/11 de 64 bits.
+
+- **`MajinUnverum.exe`** (recomendado): el programa entero en un solo archivo, no hay que instalar nada más.
+- `MajinUnverum-vX.Y.Z-standalone.zip`: lo mismo en una carpeta.
+- `MajinUnverum-vX.Y.Z.zip`: la versión ligera, necesita el [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## Instalación
 
-1. Descarga el zip de [Releases](https://github.com/MajinSander/Sparking-Unverum/releases).
-2. Descomprímelo en una carpeta propia, por ejemplo `C:\SparkingUnverum`. Mejor fuera de `Archivos de programa`.
-3. Abre `SparkingUnverum.exe`. Encontrará el juego solo; si no, pulsa **Configurar** y elige `SparkingZERO.exe`.
+1. Crea una carpeta solo para el programa, por ejemplo `C:\Majin Unverum` (mejor fuera de `Archivos de programa`). Ahí guardará tus mods, perfiles y ajustes.
+2. Mete en ella `MajinUnverum.exe` (o descomprime el zip) y ábrelo.
+3. Encontrará el juego solo; si no, pulsa **Configurar** y elige `SparkingZERO.exe`.
+
+Windows puede avisar de que es un programa que no conoce ("Windows protegió su PC"): pulsa **Más información** y **Ejecutar de todas formas**. Pasa con los programas que no llevan firma de pago.
+
+Si venías de Sparking Unverum, Majin Unverum lee su configuración y tus mods tal cual.
 
 ## Uso rápido
 
 - **Tienda de mods**: busca un mod y pulsa *Descargar*.
 - **Mis mods**: marca los mods que quieras y arrástralos para ordenarlos; los de arriba tienen prioridad. Después pulsa **Jugar**.
 - **Perfiles**: guarda distintas combinaciones de mods.
+- **Categorías**: la pestaña fina al lado de la lista abre el organizador. Arrastra los mods a las carpetas y pulsa una carpeta para ver solo sus mods. En la lista normal, el filtro de arriba también deja elegir una carpeta.
 - **Ajustes**: idioma, actualizaciones, importar desde el Unverum clásico, agrupar mods, liberar espacio y quitar todos los mods del juego.
 
 ---
@@ -70,10 +79,11 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - My mods shows the size of each mod and filters by enabled, disabled, updatable, unavailable or not linked to GameBanana.
 - Frees space in `Backups` by deleting only the files that are already identical in your mods.
 - Doesn't touch the mods while the game is running.
+- Categories: sort your mods into character and general folders by dragging their pictures, with a live text filter. A mod can be in several folders and each folder counts its mods and the enabled ones.
 
-**Requirements:** Windows 10/11 x64. The `-standalone` zip needs nothing else; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
+**Download:** from [Releases](https://github.com/MajinSander/Sparking-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
-**Install:** download the zip from [Releases](https://github.com/MajinSander/Sparking-Unverum/releases), extract it to its own folder and run `SparkingUnverum.exe`.
+**Install:** put `MajinUnverum.exe` (or the extracted zip) in a folder of its own, for example `C:\Majin Unverum`, and open it. That folder keeps your mods, loadouts and settings. If Windows SmartScreen warns about it, click **More info** and **Run anyway**.
 
 ## Build
 
@@ -81,7 +91,7 @@ Browse and download GameBanana mods inside the app, install them with the websit
 dotnet build SparkingUnverum.sln -c Release
 ```
 
-`build.ps1` creates both release zips.
+`build.ps1` creates `MajinUnverum.exe` and both release zips.
 
 ## License
 
