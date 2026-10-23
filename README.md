@@ -32,7 +32,7 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 
 ## Descarga
 
-Todo está en [Releases](https://github.com/MajinSander/Sparking-Unverum/releases/latest). Hace falta Windows 10/11 de 64 bits.
+Todo está en [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest). Hace falta Windows 10/11 de 64 bits.
 
 - **`MajinUnverum.exe`** (recomendado): el programa entero en un solo archivo, no hay que instalar nada más.
 - `MajinUnverum-vX.Y.Z-standalone.zip`: lo mismo en una carpeta.
@@ -81,7 +81,7 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - Doesn't touch the mods while the game is running.
 - Categories: sort your mods into character and general folders by dragging their pictures, with a live text filter. A mod can be in several folders and each folder counts its mods and the enabled ones.
 
-**Download:** from [Releases](https://github.com/MajinSander/Sparking-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
+**Download:** from [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 **Install:** put `MajinUnverum.exe` (or the extracted zip) in a folder of its own, for example `C:\Majin Unverum`, and open it. That folder keeps your mods, loadouts and settings. If Windows SmartScreen warns about it, click **More info** and **Run anyway**.
 

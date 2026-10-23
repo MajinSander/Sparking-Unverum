@@ -20,8 +20,8 @@ namespace SparkingUnverum
         public const int ZeroSparkJsonCategory = 33583;
         public const int SkinsCategory = 32453;
         public const string RepositoryOwner = "MajinSander";
-        public const string RepositoryName = "Sparking-Unverum";
-        public const string RepositoryUrl = "https://github.com/MajinSander/Sparking-Unverum";
+        public const string RepositoryName = "Majin-Unverum";
+        public const string RepositoryUrl = "https://github.com/MajinSander/Majin-Unverum";
     }
 
     // Folders of a game install, computed from the path of SparkingZERO.exe
