@@ -38,7 +38,8 @@
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="CodeInput" Height="58" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11"
                          Background="#181818" BorderBrush="#353535" Foreground="#c2c2c2" Padding="4" TextChanged="CodeInput_TextChanged"/>
-                <Button Grid.Column="1" Margin="8,0,0,0" Padding="14,0" FontSize="13" Foreground="#f2f2f2" Content="{l:Tr Import.OpenFile}" Click="OpenFile_Click"/>
+                <Button Grid.Column="1" Margin="8,0,0,0" Padding="14,0" FontSize="13" Foreground="#f2f2f2" Content="{l:Tr Import.OpenFile}" Click="OpenFile_Click"
+                        ToolTip="{l:Tr Import.OpenFileTooltip}"/>
             </Grid>
             <TextBlock x:Name="ErrorText" Foreground="#FFB0B0" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" Visibility="Collapsed"/>
         </StackPanel>
@@ -48,7 +49,10 @@
             <TextBlock x:Name="ListInfo" Foreground="#a2a2a2" FontSize="12" Margin="0,2,0,8"/>
             <TextBlock x:Name="InstalledText" Foreground="#8BC34A" FontSize="13"/>
             <TextBlock x:Name="DownloadText" Foreground="#7FC8FF" FontSize="13"/>
+            <TextBlock x:Name="PackText" Foreground="#C9A0FF" FontSize="13" TextWrapping="Wrap"/>
             <TextBlock x:Name="MissingText" Foreground="#FF8A65" FontSize="13" TextWrapping="Wrap"/>
+            <Button x:Name="AddPackButton" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="12,4" FontSize="13" Foreground="#f2f2f2" Visibility="Collapsed"
+                    Content="{l:Tr Import.AddPack}" ToolTip="{l:Tr Import.AddPackTooltip}" Click="AddPack_Click"/>
         </StackPanel>
 
         <Border Grid.Row="2" BorderBrush="#353535" BorderThickness="1" Background="#1a1a1a">

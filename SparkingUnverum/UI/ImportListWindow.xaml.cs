@@ -17,11 +17,12 @@ namespace SparkingUnverum.UI
     {
         public ImportItem Item { get; set; }
         public string Name => Item.Shared.DisplayName;
-        public string Glyph => Item.State switch { ImportState.Installed => "✓", ImportState.Download => "↓", _ => "✗" };
+        public string Glyph => Item.State switch { ImportState.Installed => "✓", ImportState.Download => "↓", ImportState.InPack => "▣", _ => "✗" };
         public Brush Color => new SolidColorBrush(Item.State switch
         {
             ImportState.Installed => System.Windows.Media.Color.FromRgb(0x8B, 0xC3, 0x4A),
             ImportState.Download => System.Windows.Media.Color.FromRgb(0x7F, 0xC8, 0xFF),
+            ImportState.InPack => System.Windows.Media.Color.FromRgb(0xC9, 0xA0, 0xFF),
             ImportState.NotOnGameBanana => System.Windows.Media.Color.FromRgb(0xFF, 0x8A, 0x65),
             _ => System.Windows.Media.Color.FromRgb(0x90, 0x90, 0x90)
         });
@@ -29,6 +30,7 @@ namespace SparkingUnverum.UI
         {
             ImportState.Installed => Item.Shared.Enabled ? Loc.T("Import.StateEnabled") : Loc.T("Import.StateDisabled"),
             ImportState.Download => StringConverters.FormatSize(Item.Size),
+            ImportState.InPack => Loc.T("Import.StateInPack", StringConverters.FormatSize(Item.Size)),
             ImportState.NotOnGameBanana => Loc.T("Import.StateNotOnGameBanana"),
             _ => Loc.T("Import.StateUnavailable")
         };
@@ -48,6 +50,8 @@ namespace SparkingUnverum.UI
         private readonly Action<string, ObservableCollection<Mod>> addLoadout;
         private SharedList list;
         private List<ImportItem> items;
+        // Zip from the friend with the mods that can't be downloaded
+        private SharedPack pack;
         private readonly ObservableCollection<ImportRow> rows = new();
         private CancellationTokenSource cancellation;
         private int parseVersion;
@@ -68,6 +72,22 @@ namespace SparkingUnverum.UI
         {
             try
             {
+                if (Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    var opened = ModListShare.OpenPack(file, list == null);
+                    if (opened == null)
+                    {
+                        ShowError(Loc.T("Import.NotAPack"));
+                        return;
+                    }
+                    pack = opened;
+                    // With the list inside, the zip is all that is needed; without it, it brings the missing mods of the open list
+                    if (opened.Code != null && !opened.Code.Equals(CodeInput.Text))
+                        CodeInput.Text = opened.Code;
+                    else
+                        Replan();
+                    return;
+                }
                 CodeInput.Text = File.ReadAllText(file);
             }
             catch (Exception e)
@@ -108,12 +128,33 @@ namespace SparkingUnverum.UI
             WaitText.Text = Loc.T("Import.Checking");
             WaitText.Visibility = Visibility.Visible;
             rows.Clear();
-            var plan = await ModListShare.Plan(parsed);
+            var plan = await ModListShare.Plan(parsed, pack);
             if (version != parseVersion)
                 return;
             list = parsed;
             items = plan;
             ShowPlan();
+        }
+
+        private async void Replan()
+        {
+            if (list == null)
+                return;
+            var version = ++parseVersion;
+            WaitText.Text = Loc.T("Import.Checking");
+            WaitText.Visibility = Visibility.Visible;
+            var plan = await ModListShare.Plan(list, pack);
+            if (version != parseVersion)
+                return;
+            items = plan;
+            ShowPlan();
+        }
+
+        private void AddPack_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog { Filter = $"{Loc.T("Share.ZipType")}|*.zip", Title = Loc.T("Import.AddPack") };
+            if (dialog.ShowDialog(this) == true)
+                ReadFile(dialog.FileName);
         }
 
         private void ShowPlan()
@@ -126,6 +167,10 @@ namespace SparkingUnverum.UI
             var installed = items.Count(i => i.State == ImportState.Installed);
             var download = items.Where(i => i.State == ImportState.Download).ToList();
             var missing = items.Where(i => i.State is ImportState.NotOnGameBanana or ImportState.Unavailable).ToList();
+            var packed = items.Where(i => i.State == ImportState.InPack).ToList();
+            PackText.Text = "▣ " + Loc.T("Import.InPack", packed.Count, StringConverters.FormatSize(packed.Sum(i => i.Size)));
+            PackText.Visibility = packed.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            AddPackButton.Visibility = missing.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             InstalledText.Text = "✓ " + Loc.T("Import.Installed", installed);
             DownloadText.Text = "↓ " + Loc.T("Import.Download", download.Count, StringConverters.FormatSize(download.Sum(i => i.Size)));
             DownloadText.Visibility = download.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -133,7 +178,7 @@ namespace SparkingUnverum.UI
             MissingText.Visibility = missing.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             rows.Clear();
             // What needs attention first, then what is already here, each in the friend's order
-            foreach (var item in items.OrderBy(i => i.State switch { ImportState.Download => 0, ImportState.NotOnGameBanana => 1, ImportState.Unavailable => 2, _ => 3 }))
+            foreach (var item in items.OrderBy(i => i.State switch { ImportState.Download => 0, ImportState.InPack => 1, ImportState.NotOnGameBanana => 2, ImportState.Unavailable => 3, _ => 4 }))
                 rows.Add(new ImportRow { Item = item });
             WaitText.Visibility = Visibility.Collapsed;
             PreviewHeader.Visibility = Visibility.Visible;
@@ -147,7 +192,11 @@ namespace SparkingUnverum.UI
 
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog { Filter = $"{Loc.T("Share.FileType")}|*{ModListShare.Extension}|*.*|*.*", Title = Loc.T("Import.OpenFile") };
+            var dialog = new OpenFileDialog
+            {
+                Filter = $"{Loc.T("Import.FileFilter")}|*{ModListShare.Extension};*.zip|{Loc.T("Share.FileType")}|*{ModListShare.Extension}|{Loc.T("Share.ZipType")}|*.zip",
+                Title = Loc.T("Import.OpenFile")
+            };
             if (dialog.ShowDialog(this) == true)
                 ReadFile(dialog.FileName);
         }
@@ -179,6 +228,44 @@ namespace SparkingUnverum.UI
             OptionsPanel.IsEnabled = false;
             ImportBorder.IsEnabled = false;
             CloseButton.Content = Loc.T("Common.Cancel");
+            AddPackButton.IsEnabled = false;
+
+            // First what comes in the zip, it doesn't need internet
+            var packed = items.Where(i => i.State == ImportState.InPack).ToList();
+            var fromPack = 0;
+            if (packed.Count > 0)
+            {
+                ProgressPanel.Visibility = Visibility.Visible;
+                TotalBar.Maximum = packed.Count;
+                for (int i = 0; i < packed.Count && !cancellation.IsCancellationRequested; i++)
+                {
+                    var item = packed[i];
+                    TotalBar.Value = i;
+                    ProgressText.Text = Loc.T("Import.Extracting", i + 1, packed.Count, item.Shared.DisplayName);
+                    var progress = new Progress<DownloadProgress>(p => FileBar.Value = p.Percentage * 100);
+                    try
+                    {
+                        item.LocalFolder = await ModListShare.ExtractFromPack(pack, item.Shared.Name, progress, cancellation.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Global.logger.WriteLine(Loc.T("Import.ExtractError", item.Shared.DisplayName, ex.Message), LoggerType.Error);
+                    }
+                    if (item.LocalFolder != null)
+                    {
+                        item.State = ImportState.Installed;
+                        fromPack++;
+                        Global.logger.WriteLine(Loc.T("Import.Extracted", item.LocalFolder), LoggerType.Info);
+                    }
+                    rows.FirstOrDefault(r => r.Item == item)?.Refresh();
+                }
+                ProgressPanel.Visibility = Visibility.Collapsed;
+            }
+
             var downloads = items.Where(i => i.State == ImportState.Download).ToList();
             var downloaded = 0;
             if (downloads.Count > 0)
@@ -219,6 +306,8 @@ namespace SparkingUnverum.UI
             var folders = FoldersCheck.IsChecked == true && FoldersCheck.Visibility == Visibility.Visible ? ModListShare.ApplyFolders(list, items) : 0;
             var missing = items.Count(i => i.LocalFolder == null);
             var done = Loc.T("Import.Done", profile, items.Count(i => i.LocalFolder != null), downloaded);
+            if (fromPack > 0)
+                done += " " + Loc.T("Import.DonePack", fromPack);
             if (missing > 0)
                 done += " " + Loc.T("Import.DoneMissing", missing, list.Author ?? Loc.T("Import.YourFriend"));
             if (cancelled)

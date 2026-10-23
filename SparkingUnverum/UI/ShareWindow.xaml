@@ -40,13 +40,13 @@
                      Background="#181818" BorderBrush="#353535" Foreground="#c2c2c2" Padding="4"/>
             <TextBlock x:Name="LengthText" Foreground="#a2a2a2" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,8"/>
             <StackPanel Orientation="Horizontal">
-                <Button Padding="16,6" Margin="0,0,10,0" FontSize="14" Foreground="#f2f2f2" Click="Copy_Click">
+                <Button Padding="16,6" Margin="0,0,10,0" FontSize="14" Foreground="#f2f2f2" Click="Copy_Click" AutomationProperties.Name="{l:Tr Share.Copy}">
                     <StackPanel Orientation="Horizontal">
                         <fa5:ImageAwesome Icon="Regular_Copy" Height="13" Foreground="#f2f2f2" Margin="0,0,7,0"/>
                         <TextBlock Text="{l:Tr Share.Copy}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-                <Button Padding="16,6" FontSize="14" Foreground="#f2f2f2" Click="Save_Click">
+                <Button Padding="16,6" FontSize="14" Foreground="#f2f2f2" Click="Save_Click" AutomationProperties.Name="{l:Tr Share.Save}">
                     <StackPanel Orientation="Horizontal">
                         <fa5:ImageAwesome Icon="Regular_Save" Height="13" Foreground="#f2f2f2" Margin="0,0,7,0"/>
                         <TextBlock Text="{l:Tr Share.Save}" VerticalAlignment="Center"/>
@@ -54,6 +54,24 @@
                 </Button>
             </StackPanel>
             <TextBlock x:Name="DoneText" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"/>
+            <!-- The mods that can't be downloaded, really, in a zip with the list -->
+            <Border x:Name="PackPanel" Visibility="Collapsed" Margin="0,12,0,0" Padding="12,10" CornerRadius="4" Background="#2a2433">
+                <StackPanel>
+                    <TextBlock x:Name="PackText" Foreground="#f2f2f2" FontSize="13" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="PackButton" Padding="16,6" FontSize="14" Foreground="#f2f2f2" Click="Pack_Click" AutomationProperties.Name="{l:Tr Share.PackButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <fa5:ImageAwesome Icon="Solid_FileArchive" Height="13" Foreground="#C9A0FF" Margin="0,0,7,0"/>
+                                <TextBlock Text="{l:Tr Share.PackButton}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="PackCancelButton" Padding="16,6" Margin="10,0,0,0" FontSize="14" Foreground="#f2f2f2" Content="{l:Tr Common.Cancel}"
+                                Visibility="Collapsed" Click="PackCancel_Click"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="PackBar" Height="8" Margin="0,10,0,0" Foreground="#C9A0FF" Background="#303030" BorderThickness="0" Visibility="Collapsed"/>
+                    <TextBlock x:Name="PackStatus" Foreground="#C9A0FF" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <Border BorderBrush="#353535" BorderThickness="0,1,0,0" Margin="0,18,0,12"/>

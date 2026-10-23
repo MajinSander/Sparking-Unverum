@@ -758,7 +758,7 @@ namespace SparkingUnverum
             {
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
                 // A list shared by a friend, not a mod
-                var shared = files.FirstOrDefault(f => Path.GetExtension(f).Equals(ModListShare.Extension, StringComparison.OrdinalIgnoreCase));
+                var shared = files.FirstOrDefault(f => Path.GetExtension(f).Equals(ModListShare.Extension, StringComparison.OrdinalIgnoreCase) || ModListShare.IsPack(f));
                 if (shared != null)
                     OpenImport(shared);
                 else

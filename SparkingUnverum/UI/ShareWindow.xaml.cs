@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Threading;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -15,6 +16,9 @@ namespace SparkingUnverum.UI
         private const int ChatLimit = 2000;
         private string code;
         private SharedList list;
+        private CancellationTokenSource packing;
+        // Above this a zip doesn't fit in a chat: better a cloud drive link
+        private const long ChatFileLimit = 25L * 1024 * 1024;
         public bool OpenImport { get; private set; }
 
         public ShareWindow()
@@ -55,15 +59,78 @@ namespace SparkingUnverum.UI
                 WorkingText.Visibility = Visibility.Collapsed;
                 IsEnabled = true;
             }
-            var onGameBanana = list.Mods.Count(m => m.OnGameBanana);
+            // Withdrawn from GameBanana counts as not there: it can't be downloaded either
+            var onGameBanana = list.Mods.Count(m => m.Downloadable);
             var others = list.Mods.Count - onGameBanana;
             SummaryText.Text = Loc.T("Share.Summary", list.Mods.Count, onGameBanana)
-                + (others > 0 ? " " + Loc.T("Share.SummaryOthers", others) : string.Empty)
+                + (others > 0 ? " " + Loc.T(others == 1 ? "Share.SummaryOthersOne" : "Share.SummaryOthers", others) : string.Empty)
                 + (list.Folders?.Count > 0 ? " " + Loc.T("Share.SummaryFolders", list.Folders.Count) : string.Empty);
             CodeBox.Text = code;
             LengthText.Text = code.Length > ChatLimit ? Loc.T("Share.LongCode", code.Length.ToString("N0")) : Loc.T("Share.ShortCode", code.Length.ToString("N0"));
             DoneText.Text = string.Empty;
             ResultPanel.Visibility = Visibility.Visible;
+            var packed = ModListShare.PackedMods(list);
+            PackPanel.Visibility = packed.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            PackStatus.Text = string.Empty;
+            if (packed.Count > 0)
+            {
+                PackText.Text = Loc.T("Share.PackText", packed.Count, "...");
+                var size = await System.Threading.Tasks.Task.Run(() => ModListShare.PackedSize(list));
+                PackText.Text = Loc.T("Share.PackText", packed.Count, StringConverters.FormatSize(size));
+            }
+        }
+
+        // The list and the mods that can't be downloaded, with all their files, where the user says
+        private async void Pack_Click(object sender, RoutedEventArgs e)
+        {
+            if (code == null || packing != null)
+                return;
+            var name = Regex.Replace(string.IsNullOrWhiteSpace(list.Title) ? Loc.T("Share.DefaultTitle") : list.Title, @"[\\/:*?""<>|]", " ").Trim();
+            var dialog = new SaveFileDialog { FileName = name + ".zip", Filter = $"{Loc.T("Share.ZipType")}|*.zip", Title = Loc.T("Share.PackButton") };
+            if (dialog.ShowDialog(this) != true)
+                return;
+            packing = new CancellationTokenSource();
+            PackButton.IsEnabled = false;
+            CreateButton.IsEnabled = false;
+            PackCancelButton.Visibility = Visibility.Visible;
+            PackBar.Visibility = Visibility.Visible;
+            PackBar.Value = 0;
+            var progress = new Progress<(long Done, long Total, string Mod)>(p =>
+            {
+                PackBar.Value = p.Total == 0 ? 100 : p.Done * 100.0 / p.Total;
+                PackStatus.Text = Loc.T("Share.PackSaving", p.Mod, StringConverters.FormatSize(p.Done), StringConverters.FormatSize(p.Total));
+            });
+            try
+            {
+                await ModListShare.SavePack(list, code, dialog.FileName, progress, packing.Token);
+                var size = new FileInfo(dialog.FileName).Length;
+                PackStatus.Text = Loc.T(size > ChatFileLimit ? "Share.PackSavedBig" : "Share.PackSaved", dialog.FileName, StringConverters.FormatSize(size));
+            }
+            catch (OperationCanceledException)
+            {
+                PackStatus.Text = Loc.T("Share.PackCancelled");
+            }
+            catch (Exception ex)
+            {
+                PackStatus.Text = ex.Message;
+            }
+            finally
+            {
+                packing = null;
+                PackButton.IsEnabled = true;
+                CreateButton.IsEnabled = true;
+                PackCancelButton.Visibility = Visibility.Collapsed;
+                PackBar.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void PackCancel_Click(object sender, RoutedEventArgs e) => packing?.Cancel();
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // Closing while zipping stops it, the half-made zip is removed
+            packing?.Cancel();
+            base.OnClosing(e);
         }
 
         private void Copy_Click(object sender, RoutedEventArgs e)

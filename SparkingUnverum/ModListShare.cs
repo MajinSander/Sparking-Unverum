@@ -35,6 +35,9 @@ namespace SparkingUnverum
         // Name to show: the shared one or the GameBanana title once known
         [JsonIgnore] public string Title { get; set; }
         [JsonIgnore] public string DisplayName => Name ?? Title ?? $"GameBanana #{Id}";
+        // Withdrawn from GameBanana: like the mods that were never there, it can only travel in the zip
+        [JsonIgnore] public bool Withdrawn { get; set; }
+        [JsonIgnore] public bool Downloadable => OnGameBanana && !Withdrawn;
         // GameBanana page ("Mod" is left out), null for mods that aren't there
         [JsonPropertyName("g")] public string Model { get; set; }
         [JsonPropertyName("i")] public long Id { get; set; }
@@ -56,8 +59,18 @@ namespace SparkingUnverum
     {
         Installed,
         Download,
+        InPack,
         NotOnGameBanana,
         Unavailable
+    }
+
+    // A zip made by the friend: the list (a .majin inside) and the mods that can't be downloaded, with all their files
+    public class SharedPack
+    {
+        public string Path { get; set; }
+        public string Code { get; set; }
+        // Mod folders it has under Mods/ -> their size
+        public Dictionary<string, long> Folders { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     // What importing a shared mod means here: already installed, to download, or impossible to get
@@ -68,7 +81,8 @@ namespace SparkingUnverum
         public string LocalFolder { get; set; }
         public GameBananaSubmission Submission { get; set; }
         public List<GameBananaItemFile> Files { get; set; } = new();
-        public long Size => Files.Sum(f => f.Filesize);
+        public long PackSize { get; set; }
+        public long Size => State == ImportState.InPack ? PackSize : Files.Sum(f => f.Filesize);
     }
 
     public static class ModListShare
@@ -133,7 +147,10 @@ namespace SparkingUnverum
                 {
                     var submission = submissions.FirstOrDefault(s => s.Id == mod.Id);
                     if (submission == null || submission.IsUnavailable)
+                    {
+                        mod.Withdrawn = true;
                         continue;
+                    }
                     mod.Name = null;
                     var files = submission.AllFiles;
                     var ids = mod.FileNames?.Select(n => files?.FirstOrDefault(f => f.FileName == n)?.Id ?? 0).Where(id => id > 0).ToList();
@@ -181,6 +198,135 @@ namespace SparkingUnverum
             }
         }
 
+        // ---------- Zip with the mods that can't be downloaded ----------
+
+        private const string PackMods = "Mods/";
+        // Already compressed: stored as they are, zipping them again only wastes time
+        private static readonly HashSet<string> Stored = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pak", ".utoc", ".ucas", ".png", ".jpg", ".jpeg", ".zip", ".rar", ".7z", ".bk2", ".usm", ".awb", ".acb", ".mp4", ".ogg", ".wem"
+        };
+
+        // Mods of the list that only the zip can bring
+        public static List<string> PackedMods(SharedList list) =>
+            list.Mods.Where(m => !m.Downloadable && m.Name != null && Directory.Exists(Path.Combine(Global.ModsPath, m.Name)))
+                .Select(m => m.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        public static long PackedSize(SharedList list) =>
+            PackedMods(list).Sum(m => new DirectoryInfo(Path.Combine(Global.ModsPath, m)).GetDirectorySize());
+
+        private static IEnumerable<string> ModFiles(string folder) =>
+            Directory.EnumerateFiles(folder, "*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint });
+
+        // The list and those mods, file by file, written aside and moved into place at the end
+        public static async Task SavePack(SharedList list, string code, string zip, IProgress<(long Done, long Total, string Mod)> progress, CancellationToken cancellation)
+        {
+            var mods = PackedMods(list);
+            var files = mods.SelectMany(m => ModFiles(Path.Combine(Global.ModsPath, m)).Select(f => (Mod: m, File: f))).ToList();
+            var total = files.Sum(f => new FileInfo(f.File).Length);
+            var temp = zip + ".part";
+            await Task.Run(() =>
+            {
+                try
+                {
+                    using (var archive = ZipFile.Open(temp, ZipArchiveMode.Create))
+                    {
+                        var title = Regex.Replace(list.Title ?? Loc.T("Share.DefaultTitle"), @"[\\/:*?""<>|]", " ").Trim();
+                        using (var writer = new StreamWriter(archive.CreateEntry(title + Extension).Open()))
+                            writer.Write(code);
+                        using (var writer = new StreamWriter(archive.CreateEntry(Loc.T("Share.PackReadmeName")).Open()))
+                            writer.Write(Loc.T("Share.PackReadme"));
+                        long done = 0;
+                        var buffer = new byte[1 << 20];
+                        foreach (var (mod, file) in files)
+                        {
+                            cancellation.ThrowIfCancellationRequested();
+                            var name = PackMods + mod + "/" + Path.GetRelativePath(Path.Combine(Global.ModsPath, mod), file).Replace('\\', '/');
+                            var entry = archive.CreateEntry(name, Stored.Contains(Path.GetExtension(file)) ? CompressionLevel.NoCompression : CompressionLevel.Fastest);
+                            entry.LastWriteTime = File.GetLastWriteTime(file);
+                            using var input = File.OpenRead(file);
+                            using var output = entry.Open();
+                            int read;
+                            while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                cancellation.ThrowIfCancellationRequested();
+                                output.Write(buffer, 0, read);
+                                done += read;
+                                progress?.Report((done, total, mod));
+                            }
+                        }
+                    }
+                    File.Move(temp, zip, true);
+                }
+                catch
+                {
+                    try { File.Delete(temp); } catch { }
+                    throw;
+                }
+            }, cancellation);
+        }
+
+        // A zip with a list inside and/or mod folders, null when it is something else (a normal mod archive)
+        public static SharedPack OpenPack(string zip, bool needsList = true)
+        {
+            try
+            {
+                using var archive = ZipFile.OpenRead(zip);
+                var pack = new SharedPack { Path = zip };
+                foreach (var entry in archive.Entries)
+                {
+                    var name = entry.FullName.Replace('\\', '/');
+                    if (!name.Contains('/') && name.EndsWith(Extension, StringComparison.OrdinalIgnoreCase) && pack.Code == null)
+                    {
+                        using var reader = new StreamReader(entry.Open());
+                        pack.Code = reader.ReadToEnd();
+                    }
+                    else if (name.StartsWith(PackMods, StringComparison.OrdinalIgnoreCase) && name.Length > PackMods.Length)
+                    {
+                        var folder = name[PackMods.Length..].Split('/')[0];
+                        if (name.Length > PackMods.Length + folder.Length + 1)
+                            pack.Folders[folder] = pack.Folders.GetValueOrDefault(folder) + entry.Length;
+                    }
+                }
+                return pack.Code != null || (!needsList && pack.Folders.Count > 0) ? pack : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static bool IsPack(string file) =>
+            Path.GetExtension(file).Equals(".zip", StringComparison.OrdinalIgnoreCase) && OpenPack(file) != null;
+
+        // Takes one mod out of the zip into its own folder, returns the folder
+        public static async Task<string> ExtractFromPack(SharedPack pack, string mod, IProgress<DownloadProgress> progress, CancellationToken cancellation)
+        {
+            var folderName = UniqueFolderName(ArchiveHelper.SafeFolderName(mod));
+            var destination = Path.GetFullPath(Path.Combine(Global.ModsPath, folderName));
+            var prefix = PackMods + mod + "/";
+            await Task.Run(() =>
+            {
+                using var archive = ZipFile.OpenRead(pack.Path);
+                var entries = archive.Entries.Where(e => e.FullName.Replace('\\', '/').StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !e.FullName.EndsWith("/")).ToList();
+                var total = Math.Max(1, entries.Sum(e => e.Length));
+                long done = 0;
+                foreach (var entry in entries)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    var target = Path.GetFullPath(Path.Combine(destination, entry.FullName.Replace('\\', '/')[prefix.Length..]));
+                    // Never outside the mod folder, whatever the zip says
+                    if (!target.StartsWith(destination + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    entry.ExtractToFile(target, true);
+                    done += entry.Length;
+                    progress?.Report(new DownloadProgress((float)done / total, done, total, mod));
+                }
+            }, cancellation);
+            return Directory.Exists(destination) ? folderName : null;
+        }
+
         // ---------- Importing ----------
 
         // Installed folder of every GameBanana page: (model, id) -> folders
@@ -202,8 +348,8 @@ namespace SparkingUnverum
             return result;
         }
 
-        // What is already here, what has to be downloaded and what can't be got
-        public static async Task<List<ImportItem>> Plan(SharedList list)
+        // What is already here, what has to be downloaded, what comes in the friend's zip and what can't be got
+        public static async Task<List<ImportItem>> Plan(SharedList list, SharedPack pack = null)
         {
             var installed = InstalledByPage();
             var folders = Directory.Exists(Global.ModsPath)
@@ -266,6 +412,14 @@ namespace SparkingUnverum
                     item.Files = ChooseFiles(item.Shared, submission.AllFiles);
                 }
             }
+            if (pack != null)
+                foreach (var item in items.Where(i => i.State is ImportState.NotOnGameBanana or ImportState.Unavailable or ImportState.Download))
+                    // Downloadable mods also come out of the zip when the friend put them there (GameBanana down, for example)
+                    if (item.Shared.Name != null && pack.Folders.ContainsKey(item.Shared.Name) && (item.State != ImportState.Download || item.Submission == null))
+                    {
+                        item.State = ImportState.InPack;
+                        item.PackSize = pack.Folders[item.Shared.Name];
+                    }
             return items;
         }
 
