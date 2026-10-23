@@ -41,6 +41,14 @@ namespace SparkingUnverum
             get => iconImage;
             set { iconImage = value; Changed(nameof(IconImage)); Changed(nameof(HasImage)); }
         }
+        private string clashText;
+        // Clashes between enabled mods of the folder, from the X-ray
+        [JsonIgnore]
+        public string ClashText
+        {
+            get => clashText;
+            set { clashText = value; Changed(nameof(ClashText)); }
+        }
         private bool isCurrent;
         // The folder whose mods are being shown
         [JsonIgnore]
@@ -82,6 +90,8 @@ namespace SparkingUnverum
         // Mod name -> picture chosen by the user for mods without one, in the Images folder
         public Dictionary<string, string> ModImages { get; set; } = new();
         public double CardWidth { get; set; } = 210;
+        // Suggestions of the X-ray the user ignored: "folder|mod"
+        public List<string> Dismissed { get; set; } = new();
     }
 
     public static class Categories
@@ -127,6 +137,7 @@ namespace SparkingUnverum
             }
             data.Folders ??= new();
             data.ModImages ??= new();
+            data.Dismissed ??= new();
             foreach (var folder in data.Folders)
                 folder.Mods ??= new();
             data.Folders.RemoveAll(f => string.IsNullOrWhiteSpace(f.Name));

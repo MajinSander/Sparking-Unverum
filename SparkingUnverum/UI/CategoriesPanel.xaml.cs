@@ -60,6 +60,19 @@ namespace SparkingUnverum.UI
             set { image = value; Changed(nameof(Image)); }
         }
 
+        public string XrayText { get; private set; }
+        public string ClashText { get; private set; }
+        public string ClashTooltip { get; private set; }
+        public void SetXray(string text, string clash, string clashTooltip)
+        {
+            XrayText = text;
+            ClashText = clash;
+            ClashTooltip = clashTooltip;
+            Changed(nameof(XrayText));
+            Changed(nameof(ClashText));
+            Changed(nameof(ClashTooltip));
+        }
+
         public string CategoriesText { get; private set; }
         public bool HasCategory { get; private set; }
         public void SetCategories(List<ModCategory> folders)
@@ -74,6 +87,23 @@ namespace SparkingUnverum.UI
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void Changed(string property) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+    }
+
+    public class XrayClashRow
+    {
+        public XrayClash Clash { get; set; }
+        public string Text { get; set; }
+        public string Detail { get; set; }
+    }
+
+    public class XraySuggestionRow
+    {
+        public XraySuggestion Suggestion { get; set; }
+        public string Title => Suggestion.IsNew ? Loc.T("Xray.NewFolder", Suggestion.Title) : Suggestion.Title;
+        public string Count => Loc.T(Suggestion.Mods.Count == 1 ? "Categories.ModsOne" : "Categories.Mods", Suggestion.Mods.Count);
+        public string Reason => Suggestion.Reason;
+        public string ModsText => string.Join(" · ", Suggestion.Mods.Take(6)) + (Suggestion.Mods.Count > 6 ? " " + Loc.T("Xray.AndMore", Suggestion.Mods.Count - 6) : string.Empty);
+        public string AddText => Loc.T(Suggestion.IsNew ? "Xray.CreateAndAdd" : "Xray.Add");
     }
 
     // The "+" tile at the end of each group of folders
@@ -111,6 +141,14 @@ namespace SparkingUnverum.UI
         private List<string[]> query = new();
         private ModCategory current;
         private int loadVersion;
+        // X-ray: what every mod changes, clashes between enabled mods and folder suggestions
+        private bool xray;
+        private Dictionary<string, ModReport> reports;
+        private readonly ObservableCollection<XrayClashRow> clashRows = new();
+        private readonly ObservableCollection<XraySuggestionRow> suggestionRows = new();
+        // Mods of a suggestion or a clash being looked at
+        private HashSet<string> customSet;
+        private string customTitle;
 
         public CategoriesPanel()
         {
@@ -120,6 +158,8 @@ namespace SparkingUnverum.UI
             CardList.ItemsSource = view;
             CharacterList.ItemsSource = characterItems;
             GeneralList.ItemsSource = generalItems;
+            ClashList.ItemsSource = clashRows;
+            SuggestionList.ItemsSource = suggestionRows;
             var dropHandler = new FolderDropHandler(this);
             GongSolutions.Wpf.DragDrop.DragDrop.SetDropHandler(CharacterList, dropHandler);
             GongSolutions.Wpf.DragDrop.DragDrop.SetDropHandler(GeneralList, dropHandler);
@@ -204,6 +244,8 @@ namespace SparkingUnverum.UI
             }
             if (version != loadVersion)
                 return;
+            if (xray)
+                await RunXray();
             await LoadImages(cards.Where(c => !c.ImageLoaded).ToList());
             if (version == loadVersion)
                 RefreshIcons();
@@ -229,6 +271,7 @@ namespace SparkingUnverum.UI
                 folder.Recount(Global.ModList);
             if (current != null)
                 FolderChipText.Text = $"{Loc.T("Categories.InFolder", current.Name)} · {current.Summary}";
+            ApplyXray();
             EnabledChanged?.Invoke();
         }
 
@@ -257,6 +300,7 @@ namespace SparkingUnverum.UI
                 folder.IsCurrent = folder == current;
             UncategorizedItem.Content = Loc.T("Categories.ShowUncategorized", cards.Count(c => !c.HasCategory));
             RefreshIcons();
+            ApplyXray();
             ApplyView();
         }
 
@@ -285,6 +329,8 @@ namespace SparkingUnverum.UI
                 return false;
             if (current != null && !current.Mods.Contains(card.Name))
                 return false;
+            if (customSet != null && !customSet.Contains(card.Name))
+                return false;
             switch (ShowBox.SelectedIndex)
             {
                 case 1 when card.HasCategory:
@@ -302,9 +348,11 @@ namespace SparkingUnverum.UI
             view.Refresh();
             var shown = view.Cast<object>().Count();
             EmptyText.Visibility = shown == 0 && cards.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            FolderChip.Visibility = current == null ? Visibility.Collapsed : Visibility.Visible;
+            FolderChip.Visibility = current == null && customSet == null ? Visibility.Collapsed : Visibility.Visible;
             if (current != null)
                 FolderChipText.Text = $"{Loc.T("Categories.InFolder", current.Name)} · {current.Summary}";
+            else if (customSet != null)
+                FolderChipText.Text = customTitle;
             UpdateResultText();
         }
 
@@ -383,11 +431,156 @@ namespace SparkingUnverum.UI
             }
         }
 
+        // ---------- X-ray ----------
+
+        private async void Xray_Click(object sender, RoutedEventArgs e)
+        {
+            xray = !xray;
+            XrayBorder.Background = xray ? (Brush)FindResource("AccentBrush") : new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
+            XrayBoard.Visibility = xray ? Visibility.Visible : Visibility.Collapsed;
+            if (xray)
+                await RunXray();
+            else
+            {
+                foreach (var card in cards)
+                    card.SetXray(null, null, null);
+                foreach (var folder in Categories.Data.Folders)
+                    folder.ClashText = null;
+                customSet = null;
+                ApplyView();
+            }
+        }
+
+        // Reads every mod (about a second, unchanged packages are remembered)
+        private async Task RunXray()
+        {
+            XrayStatus.Text = Loc.T("Xray.Analyzing");
+            var mods = Global.ModList.ToList();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            reports = await Task.Run(() => ModXray.Analyze(mods));
+            XrayStatus.Text = Loc.T("Xray.Analyzed", reports.Count, Math.Round(watch.Elapsed.TotalSeconds, 1), reports.Values.Sum(r => r.Assets.Count))
+                + (reports.Values.Any(r => r.Unreadable > 0) ? " · " + Loc.T("Xray.Unreadable", reports.Values.Count(r => r.Unreadable > 0)) : string.Empty);
+            ApplyXray();
+        }
+
+        // Texts under the pictures, clashes and suggestions from what was read
+        private void ApplyXray()
+        {
+            if (!xray || reports == null)
+                return;
+            var names = ModXray.FamilyNames(Categories.Data, reports);
+            var clashes = ModXray.Clashes(Global.ModList, reports);
+            foreach (var card in cards)
+            {
+                if (!reports.TryGetValue(card.Name, out var report))
+                {
+                    card.SetXray(null, null, null);
+                    continue;
+                }
+                var files = report.Assets.Count;
+                var text = report.Assets.Count == 0 && report.Unreadable > 0 ? Loc.T("Xray.CardUnreadable") : report.Kind switch
+                {
+                    XrayKind.Character => Loc.T("Xray.CardCharacter", names.GetValueOrDefault(report.MainFamily) ?? report.MainFamily + "x", files),
+                    XrayKind.Map => Loc.T("Xray.CardMap", files),
+                    XrayKind.Interface => Loc.T("Xray.CardInterface", files),
+                    XrayKind.Sound => Loc.T("Xray.CardSound", files),
+                    _ => Loc.T("Xray.CardOther", files)
+                };
+                var mine = clashes.Where(c => c.Winner == card.Name || c.Loser == card.Name).ToList();
+                card.SetXray(text, mine.Count == 0 ? null : Loc.T(mine.Count == 1 ? "Xray.CardClashOne" : "Xray.CardClash", mine.Count),
+                    mine.Count == 0 ? null : string.Join("\n", mine.Select(ClashText)));
+            }
+            // Clashes between the mods of a folder: too many mods for one character
+            foreach (var folder in Categories.Data.Folders)
+            {
+                var inside = clashes.Count(c => folder.Mods.Contains(c.Winner) && folder.Mods.Contains(c.Loser));
+                folder.ClashText = inside == 0 ? null : Loc.T(inside == 1 ? "Xray.FolderClashOne" : "Xray.FolderClash", inside);
+            }
+            clashRows.Clear();
+            foreach (var clash in clashes)
+                clashRows.Add(new XrayClashRow
+                {
+                    Clash = clash,
+                    Text = ClashText(clash),
+                    Detail = clash.Slot != null ? Loc.T("Xray.ClashSlotHint")
+                        : Loc.T("Xray.ClashExample", clash.Example) + "\n" + Loc.T("Xray.ClashHint", clash.Winner, clash.Loser)
+                });
+            ClashCount.Text = $"({clashes.Count})";
+            NoClashes.Visibility = clashes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            suggestionRows.Clear();
+            foreach (var suggestion in ModXray.Suggest(Categories.Data, reports))
+                suggestionRows.Add(new XraySuggestionRow { Suggestion = suggestion });
+            SuggestionCount.Text = $"({suggestionRows.Count})";
+            NoSuggestions.Visibility = suggestionRows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static string ClashText(XrayClash clash) => clash.Slot != null
+            ? Loc.T("Xray.ClashSlot", clash.Winner, clash.Loser, clash.Slot)
+            : Loc.T(clash.Files == 1 ? "Xray.ClashFilesOne" : "Xray.ClashFiles", clash.Winner, clash.Loser, clash.Files);
+
+        private void ShowMods(IEnumerable<string> mods, string title)
+        {
+            current = null;
+            foreach (var folder in Categories.Data.Folders)
+                folder.IsCurrent = false;
+            customSet = new HashSet<string>(mods);
+            customTitle = title;
+            ShowBox.SelectedIndex = 0;
+            SearchBox.Clear();
+            ApplyView();
+        }
+
+        private void Clash_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is XrayClashRow row)
+                ShowMods(new[] { row.Clash.Winner, row.Clash.Loser }, Loc.T("Xray.ShowingClash", row.Clash.Winner, row.Clash.Loser));
+        }
+
+        private void SuggestionSee_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is XraySuggestionRow row)
+                ShowMods(row.Suggestion.Mods, Loc.T("Xray.ShowingSuggestion", row.Suggestion.Title));
+        }
+
+        private void SuggestionAdd_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not XraySuggestionRow row)
+                return;
+            var suggestion = row.Suggestion;
+            var mods = cards.Where(c => suggestion.Mods.Contains(c.Name)).ToList();
+            if (suggestion.Folder != null)
+                AddTo(suggestion.Folder, mods);
+            else
+            {
+                var prompt = new PromptWindow(Loc.T("Categories.NewTitle"), suggestion.NewFolderName, name => Categories.NameTaken(name) ? Loc.T("Categories.NameTaken") : null);
+                if (prompt.ShowDialog() != true)
+                    return;
+                var folder = new ModCategory { Name = prompt.Result, Character = suggestion.Character };
+                Categories.Data.Folders.Add(folder);
+                Categories.Add(folder, mods.Select(c => c.Name));
+                StatusText.Text = Loc.T("Categories.Added", mods.Count, folder.Name);
+                RefreshCategories();
+            }
+            if (customSet != null && customSet.SetEquals(suggestion.Mods))
+                ShowFolder(null);
+        }
+
+        private void SuggestionIgnore_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not XraySuggestionRow row)
+                return;
+            foreach (var mod in row.Suggestion.Mods)
+                Categories.Data.Dismissed.Add(row.Suggestion.Target + "|" + mod);
+            Categories.Save();
+            ApplyXray();
+        }
+
         // ---------- Folders ----------
 
         private void ShowFolder(ModCategory folder)
         {
             current = folder;
+            customSet = null;
             foreach (var f in Categories.Data.Folders)
                 f.IsCurrent = f == current;
             ApplyView();

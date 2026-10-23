@@ -345,7 +345,7 @@ namespace SparkingUnverum
                 ModFilterBox.SelectedIndex = 0;
         }
 
-        private void CategoriesTab_Click(object sender, MouseButtonEventArgs e)
+        private void CategoriesTab_Click(object sender, RoutedEventArgs e)
         {
             if (!busy)
                 CategoriesPanel.Open();

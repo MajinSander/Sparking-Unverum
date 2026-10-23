@@ -73,7 +73,8 @@ namespace SparkingUnverum
             }
             Global.LoadConfig();
             Loc.Init(Global.config.Language);
-            RegistryConfig.InstallGBHandler();
+            if (Global.config.RegisterOneClick)
+                RegistryConfig.InstallGBHandler();
             Installer.UpdateVersion(target);
 
             // Opened from a 1-click install button: install the mod and skip the self update check

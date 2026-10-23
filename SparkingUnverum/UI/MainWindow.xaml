@@ -285,18 +285,27 @@
                             </Button>
                         </Grid>
                         <!-- Thin tab that opens the organizer -->
-                        <Border Name="CategoriesTab" Grid.Row="1" HorizontalAlignment="Right" Width="22" Margin="0,5,2,3" CornerRadius="0,4,4,0" Cursor="Hand"
-                                ToolTip="{l:Tr Main.CategoriesTooltip}" MouseLeftButtonUp="CategoriesTab_Click">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#262626"/>
-                                    <Style.Triggers>
+                        <!-- A real button: keyboard, screen readers and automation can press it -->
+                        <Button Name="CategoriesTab" Grid.Row="1" HorizontalAlignment="Right" Width="22" Margin="0,5,2,3" Cursor="Hand"
+                                ToolTip="{l:Tr Main.CategoriesTooltip}" AutomationProperties.Name="{l:Tr Main.CategoriesTab}" Click="CategoriesTab_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="TabBack" CornerRadius="0,4,4,0" Background="#262626">
+                                        <ContentPresenter VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#C25E0C"/>
+                                            <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
                                         </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter TargetName="TabBack" Property="Opacity" Value="0.5"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
                             <StackPanel VerticalAlignment="Center">
                                 <fa5:ImageAwesome Icon="Solid_LayerGroup" Height="11" Foreground="#c2c2c2" Margin="0,0,0,8"/>
                                 <TextBlock Text="{l:Tr Main.CategoriesTab}" Foreground="#c2c2c2" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center">
@@ -305,7 +314,7 @@
                                     </TextBlock.LayoutTransform>
                                 </TextBlock>
                             </StackPanel>
-                        </Border>
+                        </Button>
                         <DataGrid Grid.Row="1" DragEnter="Add_Enter" Margin="10,5,26,3" Name="ModGrid" AutoGenerateColumns="False" GridLinesVisibility="None" VerticalScrollBarVisibility="Auto" BorderBrush="#424242"
                                   EnableColumnVirtualization="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False"
                                   CanUserResizeColumns="False" CanUserResizeRows="False" CanUserSortColumns="False" AlternatingRowBackground="#2A2A2A"

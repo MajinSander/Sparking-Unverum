@@ -72,6 +72,8 @@ namespace SparkingUnverum
         public bool ClassicImportOffered { get; set; }
         // GameBanana pages ("Mod:123") whose several folders the user wants to keep separate
         public List<string> KeepSeparate { get; set; } = new();
+        // A test copy can leave the GameBanana 1-click buttons to the main install
+        public bool RegisterOneClick { get; set; } = true;
     }
     public class GameConfig
     {

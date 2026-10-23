@@ -8,6 +8,16 @@
              Background="#202020" PreviewKeyDown="Panel_PreviewKeyDown">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <Style x:Key="HiddenWhenEmpty" TargetType="TextBlock">
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+                <Trigger Property="Text" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <!-- A mod: picture, name and the folders it is in -->
         <DataTemplate x:Key="CardTemplate" DataType="{x:Type ui:ModCard}">
             <Border Width="{Binding CardWidth, RelativeSource={RelativeSource AncestorType=UserControl}}" CornerRadius="4" Background="#2a2a2a" ToolTip="{Binding Name}">
@@ -46,6 +56,10 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+                    <TextBlock Text="{Binding XrayText}" Margin="6,-4,6,6" FontSize="11" Foreground="#7FC8FF" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding XrayText}" Style="{StaticResource HiddenWhenEmpty}"/>
+                    <TextBlock Text="{Binding ClashText}" Margin="6,-4,6,6" FontSize="11" FontWeight="SemiBold" Foreground="#FF8A65" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding ClashTooltip}" Style="{StaticResource HiddenWhenEmpty}"/>
                 </StackPanel>
             </Border>
         </DataTemplate>
@@ -122,6 +136,8 @@
                     <TextBlock Text="{Binding Name}" Margin="6,6,6,0" TextAlignment="Center" TextWrapping="Wrap" MaxHeight="34" TextTrimming="CharacterEllipsis"
                                FontWeight="SemiBold" Foreground="#f2f2f2" FontSize="13"/>
                     <TextBlock Text="{Binding Summary}" TextAlignment="Center" Foreground="#a2a2a2" FontSize="11" Margin="4,1,4,0"/>
+                    <TextBlock Text="{Binding ClashText}" TextAlignment="Center" Foreground="#FF8A65" FontSize="11" FontWeight="SemiBold" Margin="4,1,4,0"
+                               Style="{StaticResource HiddenWhenEmpty}"/>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -150,6 +166,35 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type ui:XrayClashRow}">
+            <Border Margin="4,3" Padding="8,6" CornerRadius="4" Background="#2f2420" Cursor="Hand" MouseLeftButtonUp="Clash_Click" ToolTip="{l:Tr Xray.SeeTooltip}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Text}" Foreground="#f2f2f2" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Detail}" Foreground="#a2a2a2" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0" Style="{StaticResource HiddenWhenEmpty}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type ui:XraySuggestionRow}">
+            <Border Margin="4,3" Padding="8,6" CornerRadius="4" Background="#22303a">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" Foreground="#7FC8FF" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Title}" Foreground="#f2f2f2" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
+                    <TextBlock Text="{Binding Reason}" Foreground="#a2a2a2" FontSize="11" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ModsText}" Foreground="#c2c2c2" FontSize="11" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Border CornerRadius="2" Background="{StaticResource AccentBrush}" Margin="0,0,6,0">
+                            <Button Margin="1" Padding="10,2" FontSize="12" FontWeight="SemiBold" Foreground="#f2f2f2" Content="{Binding AddText}" Click="SuggestionAdd_Click"/>
+                        </Border>
+                        <Button Padding="10,2" Margin="0,0,6,0" FontSize="12" Foreground="#f2f2f2" Content="{l:Tr Xray.See}" Click="SuggestionSee_Click" ToolTip="{l:Tr Xray.SeeTooltip}"/>
+                        <Button Padding="10,2" FontSize="12" Foreground="#f2f2f2" Content="{l:Tr Xray.Ignore}" Click="SuggestionIgnore_Click" ToolTip="{l:Tr Xray.IgnoreTooltip}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
         <ItemsPanelTemplate x:Key="WrapItems">
             <WrapPanel/>
         </ItemsPanelTemplate>
@@ -171,6 +216,7 @@
         <Grid Grid.ColumnSpan="3" Margin="0,5,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -214,12 +260,21 @@
             <CheckBox x:Name="DescriptionCheck" Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#f2f2f2" FontSize="13"
                       Content="{l:Tr Categories.SearchDescription}" ToolTip="{l:Tr Categories.SearchDescriptionTooltip}"
                       Checked="DescriptionCheck_Changed" Unchecked="DescriptionCheck_Changed"/>
-            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center" ToolTip="{l:Tr Categories.CardSizeTooltip}">
+            <Border x:Name="XrayBorder" Grid.Column="3" Margin="12,0,0,0" Height="35" CornerRadius="3" Background="#303030">
+                <Button x:Name="XrayButton" Margin="2" Padding="12,0" FontSize="14" FontWeight="SemiBold" Foreground="#f2f2f2" Click="Xray_Click" ToolTip="{l:Tr Xray.ButtonTooltip}"
+                        AutomationProperties.Name="{l:Tr Xray.Button}">
+                    <StackPanel Orientation="Horizontal">
+                        <fa5:ImageAwesome Icon="Solid_Eye" Height="13" Foreground="#7FC8FF" Margin="0,0,7,0"/>
+                        <TextBlock Text="{l:Tr Xray.Button}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center" ToolTip="{l:Tr Categories.CardSizeTooltip}">
                 <fa5:ImageAwesome Icon="Regular_Image" Height="13" Foreground="#a2a2a2" Margin="0,0,6,0"/>
                 <Slider x:Name="SizeSlider" Width="110" Minimum="140" Maximum="340" SmallChange="10" LargeChange="40" VerticalAlignment="Center" ValueChanged="SizeSlider_ValueChanged"/>
                 <fa5:ImageAwesome Icon="Regular_Image" Height="19" Foreground="#a2a2a2" Margin="6,0,0,0"/>
             </StackPanel>
-            <Border Grid.Column="4" Margin="14,0,0,0" Height="35" CornerRadius="3" Background="{StaticResource AccentBrush}">
+            <Border Grid.Column="5" Margin="14,0,0,0" Height="35" CornerRadius="3" Background="{StaticResource AccentBrush}">
                 <Button Margin="2" Padding="14,0" FontSize="15" FontWeight="SemiBold" Foreground="#f2f2f2" Content="{l:Tr Categories.Close}" Click="Close_Click"/>
             </Border>
         </Grid>
@@ -264,6 +319,21 @@
         <Border Grid.Row="2" Grid.Column="2" Background="#1a1a1a" BorderBrush="#424242" BorderThickness="1">
             <ScrollViewer VerticalScrollBarVisibility="Visible">
                 <StackPanel Margin="6,4,6,10">
+                    <StackPanel x:Name="XrayBoard" Visibility="Collapsed" Margin="0,0,0,10">
+                        <TextBlock x:Name="XrayStatus" Foreground="#7FC8FF" FontSize="12" Margin="4,4,4,6" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
+                            <TextBlock Text="{l:Tr Xray.Clashes}" FontSize="18" FontWeight="Bold" Foreground="#f2f2f2"/>
+                            <TextBlock x:Name="ClashCount" Foreground="#a2a2a2" Margin="8,0,0,2" FontSize="13" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+                        <TextBlock x:Name="NoClashes" Text="{l:Tr Xray.ClashesNone}" Foreground="#909090" FontSize="12" Margin="6,0,6,4"/>
+                        <ItemsControl x:Name="ClashList"/>
+                        <StackPanel Orientation="Horizontal" Margin="4,12,4,4">
+                            <TextBlock Text="{l:Tr Xray.Suggestions}" FontSize="18" FontWeight="Bold" Foreground="#f2f2f2"/>
+                            <TextBlock x:Name="SuggestionCount" Foreground="#a2a2a2" Margin="8,0,0,2" FontSize="13" VerticalAlignment="Bottom"/>
+                        </StackPanel>
+                        <TextBlock x:Name="NoSuggestions" Text="{l:Tr Xray.SuggestionsNone}" Foreground="#909090" FontSize="12" Margin="6,0,6,4"/>
+                        <ItemsControl x:Name="SuggestionList"/>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="4,4,4,4">
                         <TextBlock Text="{l:Tr Categories.Characters}" FontSize="18" FontWeight="Bold" Foreground="#f2f2f2"/>
                         <TextBlock x:Name="CharactersCount" Foreground="#a2a2a2" Margin="8,0,0,2" FontSize="13" VerticalAlignment="Bottom"/>
