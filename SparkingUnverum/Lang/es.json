@@ -646,5 +646,6 @@
   "Roster.SummaryOneGame": "1 traje, del juego",
   "Roster.SummaryOneMod": "1 traje, de un mod",
   "Roster.SummaryAllGame": "{0} trajes, todos del juego",
-  "Roster.SummaryAllMods": "{0} trajes, todos de mods"
+  "Roster.SummaryAllMods": "{0} trajes, todos de mods",
+  "Browser.SortNewAndUpdated": "Nuevos y actualizados"
 }

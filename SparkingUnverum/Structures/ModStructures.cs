@@ -76,6 +76,8 @@ namespace SparkingUnverum
         public bool RegisterOneClick { get; set; } = true;
         // Name shown in the lists of mods the user shares
         public string ShareAuthor { get; set; }
+        // Order of the mod store the user chose last, null = new and updated, like GameBanana
+        public int? StoreSort { get; set; }
     }
     public class GameConfig
     {

@@ -31,6 +31,8 @@ Descarga mods de GameBanana sin salir del programa, instálalos con los botones 
 - **Categorías**: ordena tus mods en carpetas de personajes y generales (mecánicas, mapas, interfaz, sonido...) arrastrando sus fotos, con un filtro que busca mientras escribes. Un mod puede estar en varias carpetas y cada carpeta cuenta cuántos mods tiene y cuántos están activos.
 - **Rayos X**: mira dentro de cada mod para saber de qué personaje es o si trae escenarios, avisa de los mods activos que chocan entre sí (y cuál gana) y sugiere carpetas aprendiendo de cómo ordenas los tuyos.
 - **Compartir tu lista**: todos tus mods o solo los activos, en un código que cabe en un mensaje de Discord o en un archivo `.majin`. Tu amigo lo abre y Majin Unverum le descarga lo que le falte y le crea un perfil con tu orden. Los mods que no están en GameBanana pueden ir de verdad en un zip junto con la lista.
+- **Plantilla**: cada personaje de la pantalla de selección con sus trajes (del juego o de qué mod viene cada uno) y los mods que lo cambian. Avisa cuando dos mods activos traen el mismo traje o cambian el mismo personaje y con un clic te quedas con uno. Con el mod CSS Organizer (de Mastaklo) salen las imágenes de los personajes y de los trajes.
+- **Historial**: cada cambio en tus mods (activar, desactivar, ordenar, instalar, borrar) se guarda por perfil; vuelve a como estaban en cualquier momento o deshaz el último cambio.
 
 ## Descarga
 
@@ -59,6 +61,8 @@ Si venías de Sparking Unverum, Majin Unverum lee su configuración y tus mods t
 - **Perfiles**: guarda distintas combinaciones de mods.
 - **Categorías**: la pestaña fina al lado de la lista abre el organizador. Arrastra los mods a las carpetas y pulsa una carpeta para ver solo sus mods. En la lista normal, el filtro de arriba también deja elegir una carpeta.
 - **Compartir**: el botón de arriba a la derecha crea el código de tu lista (y el zip con los mods que no están en GameBanana) o importa la de un amigo.
+- **Plantilla**: la pestaña fina debajo de Categorías. Pulsa un personaje para ver sus trajes y sus mods.
+- **Historial**: el botón de arriba a la derecha muestra cada cambio con un botón para volver a ese momento.
 - **Ajustes**: idioma, actualizaciones, importar desde el Unverum clásico, agrupar mods, liberar espacio y quitar todos los mods del juego.
 
 ---
@@ -87,6 +91,8 @@ Browse and download GameBanana mods inside the app, install them with the websit
 - Categories: sort your mods into character and general folders by dragging their pictures, with a live text filter. A mod can be in several folders and each folder counts its mods and the enabled ones.
 - X-ray: looks inside every mod to tell which character it is about or whether it brings stages, warns about enabled mods that clash (and which one wins) and suggests folders, learning from how you sort yours.
 - Share your list: all your mods or only the enabled ones, as a code that fits in a Discord message or a `.majin` file. Your friend opens it and Majin Unverum downloads what is missing and creates a loadout with your order. Mods that aren't on GameBanana can really travel in a zip with the list.
+- Roster: every character of the select screen with its costumes (of the game or from which mod) and the mods that change it. Warns when two enabled mods bring the same costume or change the same character, and one click keeps one. With the CSS Organizer mod (by Mastaklo) the pictures of characters and costumes are shown.
+- History: every change to your mods (enable, disable, sort, install, delete) is kept per loadout; go back to any moment or undo the last change.
 
 **Download:** from [Releases](https://github.com/MajinSander/Majin-Unverum/releases/latest) (Windows 10/11 x64). `MajinUnverum.exe` is the whole program in one file; the `-standalone` zip is the same in a folder; the small zip needs the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0).
 

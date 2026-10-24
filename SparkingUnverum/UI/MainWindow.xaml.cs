@@ -88,7 +88,9 @@ namespace SparkingUnverum
             ColorZCheckbox.IsChecked = Global.config.HideColorZ;
             NSFWCheckbox.IsChecked = Global.config.IncludeNsfw;
             FilterBox.ItemsSource = FilterNames;
-            FilterBox.SelectedIndex = 0;
+            // Like the mods page of the game on GameBanana: featured mods change only when GameBanana picks one,
+            // with them first the store looked stuck for days
+            FilterBox.SelectedIndex = Math.Clamp(Global.config.StoreSort ?? (int)FeedFilter.NewAndUpdated, 0, FilterNames.Count - 1);
         }
 
         private async void WindowLoaded(object sender, RoutedEventArgs e)
@@ -1219,7 +1221,7 @@ namespace SparkingUnverum
 
         private static List<string> FilterNames => new()
         {
-            Loc.T("Browser.SortFeatured"), Loc.T("Browser.SortNewest"), Loc.T("Browser.SortUpdated"),
+            Loc.T("Browser.SortNewAndUpdated"), Loc.T("Browser.SortFeatured"), Loc.T("Browser.SortNewest"), Loc.T("Browser.SortUpdated"),
             Loc.T("Browser.SortDownloads"), Loc.T("Browser.SortLikes")
         };
         private static GameBananaCategory AllCategory => new() { Name = Loc.T("Browser.All"), ID = null };
@@ -1471,7 +1473,10 @@ namespace SparkingUnverum
 
         private void FilterSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!IsLoaded || filterSelect || !browserInitialized)
+            if (!IsLoaded || filterSelect)
+                return;
+            Global.config.StoreSort = FilterBox.SelectedIndex;
+            if (!browserInitialized)
                 return;
             page = 1;
             RefreshFilter();

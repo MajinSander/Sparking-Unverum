@@ -646,5 +646,6 @@
   "Roster.SummaryOneGame": "1 costume, of the game",
   "Roster.SummaryOneMod": "1 costume, from a mod",
   "Roster.SummaryAllGame": "{0} costumes, all of the game",
-  "Roster.SummaryAllMods": "{0} costumes, all from mods"
+  "Roster.SummaryAllMods": "{0} costumes, all from mods",
+  "Browser.SortNewAndUpdated": "New and updated"
 }

@@ -10,6 +10,8 @@ namespace SparkingUnverum
 {
     public enum FeedFilter
     {
+        // What gamebanana.com/mods/games/21179 shows: new mods and mods that got an update
+        NewAndUpdated,
         Featured,
         Newest,
         Updated,
@@ -58,6 +60,7 @@ namespace SparkingUnverum
             url += categoryId != null ? $"&_aFilters[Generic_Category]={categoryId}" : $"&_aFilters[Generic_Game]={SparkingGame.GameBananaId}";
             url += filter switch
             {
+                FeedFilter.NewAndUpdated => "&_sSort=Generic_NewAndUpdated",
                 FeedFilter.Featured => "&_aFilters[Generic_WasFeatured]=true&_sSort=Generic_Newest",
                 FeedFilter.Updated => "&_sSort=Generic_LatestModified",
                 FeedFilter.MostDownloaded => "&_sSort=Generic_MostDownloaded",
