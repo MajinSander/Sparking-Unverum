@@ -65,12 +65,17 @@ namespace SparkingUnverum
             RefreshAll();
             Refresh();
             ModsWatcher.EnableRaisingEvents = true;
+            // The mods as they are now are the first step of the history of this session
+            ModHistory.Start();
 
             defaultFlow.Blocks.Add(ConvertToFlowParagraph(Loc.T("Main.DefaultDescription")));
             ShowMetadata(null);
 
             CategoriesPanel.Closed += OnCategoriesClosed;
             CategoriesPanel.EnabledChanged += UpdateStatsText;
+            RosterPanel.Closed += OnCategoriesClosed;
+            RosterPanel.EnabledChanged += UpdateStatsText;
+            RosterPanel.ShowInList += ShowModInList;
             searchTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             searchTimer.Tick += (s, e) =>
             {
@@ -159,8 +164,11 @@ namespace SparkingUnverum
             ModGridSearchButton.IsEnabled = !value;
             SettingsButton.IsEnabled = !value;
             ShareButton.IsEnabled = !value;
+            HistoryButton.IsEnabled = !value;
             CategoriesTab.IsEnabled = !value;
             CategoriesPanel.IsEnabled = !value;
+            RosterTab.IsEnabled = !value;
+            RosterPanel.IsEnabled = !value;
         }
 
         // Looks for mod updates and shows them all in one window
@@ -226,6 +234,8 @@ namespace SparkingUnverum
             UpdateStats();
             if (CategoriesPanel.IsOpen)
                 _ = CategoriesPanel.Reload();
+            if (RosterPanel.IsOpen)
+                _ = RosterPanel.Reload();
         }
 
         private void RefreshAll()
@@ -354,8 +364,54 @@ namespace SparkingUnverum
 
         private void CategoriesTab_Click(object sender, RoutedEventArgs e)
         {
-            if (!busy)
-                CategoriesPanel.Open();
+            if (busy)
+                return;
+            RosterPanel.Close();
+            CategoriesPanel.Open();
+        }
+
+        private void RosterTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (busy)
+                return;
+            CategoriesPanel.Close();
+            RosterPanel.Open();
+        }
+
+        // A mod chosen in the roster, found in the list with nothing hiding it
+        private void ShowModInList(string name)
+        {
+            RosterPanel.Close();
+            var mod = Global.ModList.FirstOrDefault(m => m.name == name);
+            if (mod == null)
+                return;
+            ModGrid_SearchBar.Clear();
+            ModFilterBox.SelectedIndex = 0;
+            ApplyModFilter(true);
+            ModGrid.SelectedItems.Clear();
+            ModGrid.SelectedItem = mod;
+            ModGrid.ScrollIntoView(mod);
+            ModGrid.Focus();
+        }
+
+        // ---------- History of the mods ----------
+
+        private void History_Click(object sender, RoutedEventArgs e)
+        {
+            if (busy)
+                return;
+            new HistoryWindow { Owner = this, Restored = AfterRestore }.ShowDialog();
+        }
+
+        private void AfterRestore()
+        {
+            ModGrid.Items.Refresh();
+            ApplyModFilter(true);
+            UpdateStatsText();
+            if (CategoriesPanel.IsOpen)
+                _ = CategoriesPanel.Reload();
+            if (RosterPanel.IsOpen)
+                _ = RosterPanel.Reload();
         }
 
         private void OnCategoriesClosed()
@@ -1062,6 +1118,8 @@ namespace SparkingUnverum
                         if (string.IsNullOrEmpty(window.loadout))
                             return;
                         var old = game.CurrentLoadout;
+                        // Its history follows the new name
+                        ModHistory.RenameLoadout(old, window.loadout);
                         game.Loadouts[window.loadout] = Global.ModList;
                         Global.LoadoutItems.Insert(Global.LoadoutItems.IndexOf(old), window.loadout);
                         Global.LoadoutItems.Remove(old);
@@ -1079,6 +1137,7 @@ namespace SparkingUnverum
                         return;
                     var current = game.CurrentLoadout;
                     game.Loadouts.Remove(current);
+                    ModHistory.RemoveLoadout(current);
                     Global.LoadoutItems.Remove(current);
                     LoadoutsBox.SelectedIndex = 0;
                     ShowMetadata(null);
@@ -1097,7 +1156,7 @@ namespace SparkingUnverum
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (IsLoaded && ModManager.IsSelected && ModGridSearchButton.IsEnabled && !CategoriesPanel.IsOpen && e.Key == Key.F
+            if (IsLoaded && ModManager.IsSelected && ModGridSearchButton.IsEnabled && !CategoriesPanel.IsOpen && !RosterPanel.IsOpen && e.Key == Key.F
                 && (e.KeyboardDevice.IsKeyDown(Key.LeftCtrl) || e.KeyboardDevice.IsKeyDown(Key.RightCtrl)))
                 ModGrid_SearchBar.Focus();
         }

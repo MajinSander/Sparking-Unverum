@@ -95,6 +95,7 @@ namespace SparkingUnverum
             {
                 logger?.WriteLine(Loc.T("Log.ConfigWriteError", e.Message), LoggerType.Error);
             }
+            ModHistory.Record();
         }
     }
 }

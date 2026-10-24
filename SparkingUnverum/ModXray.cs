@@ -27,6 +27,13 @@ namespace SparkingUnverum
         public Dictionary<string, int> Families { get; } = new();
         // Character number (0150, 0151...) -> files that mention it
         public Dictionary<string, int> Characters { get; } = new();
+        // Whole character id of the game (0000_23 is one form of one Goku) -> files that mention it
+        public Dictionary<string, int> Ids { get; } = new();
+        // Ids in files that take the place of files of the game; inside a mod's own plugin they change nothing else
+        public HashSet<string> GameIds { get; } = new();
+        // Whole id of the main character
+        public string MainId => MainFamily == null ? null
+            : Ids.Where(x => x.Key.StartsWith(MainFamily, StringComparison.Ordinal)).OrderByDescending(x => x.Value).ThenBy(x => x.Key).Select(x => x.Key).FirstOrDefault();
         // Character slots the mod defines ("0000_23"), two mods defining the same one fight for it
         public HashSet<string> DefinedSlots { get; } = new();
         public List<string> Maps { get; } = new();
@@ -129,6 +136,9 @@ namespace SparkingUnverum
                     if (id.StartsWith("999", StringComparison.Ordinal))
                         continue;
                     report.Characters[id] = report.Characters.GetValueOrDefault(id) + 1;
+                    report.Ids[match.Value] = report.Ids.GetValueOrDefault(match.Value) + 1;
+                    if (!path.StartsWith("SparkingZERO/Mods/", StringComparison.OrdinalIgnoreCase))
+                        report.GameIds.Add(match.Value);
                     report.Families[id[..3]] = report.Families.GetValueOrDefault(id[..3]) + 1;
                     mentions++;
                     if (name.StartsWith("CharacterData_", StringComparison.OrdinalIgnoreCase) && match.Index == "CharacterData_".Length)

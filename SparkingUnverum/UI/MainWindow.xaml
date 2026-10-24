@@ -13,6 +13,30 @@
         Height="750" Width="1280" MinHeight="700" MinWidth="1180" Loaded="WindowLoaded" KeyDown="Window_KeyDown">
     <Window.Resources>
         <FontFamily x:Key="Monospace">../Assets/#Roboto Mono</FontFamily>
+        <!-- Thin tabs next to the list that open the organizer and the roster -->
+        <Style x:Key="ThinTab" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="TabBack" CornerRadius="0,4,4,0" Background="#262626">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TabBack" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="ModTemplate">
             <Border CornerRadius="5" Margin="5">
                 <Border.Background>
@@ -163,6 +187,13 @@
         <!-- Top right corner, next to the tabs -->
         <StackPanel Panel.ZIndex="3" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
             <TextBox BorderThickness="0" FontSize="16" Margin="5" Background="Transparent" BorderBrush="Transparent" IsReadOnly="True" Foreground="#c2c2c2" FontWeight="Medium" Name="Stats" VerticalAlignment="Center"/>
+            <Button Name="HistoryButton" Click="History_Click" Margin="5,3,0,3" Height="30" Padding="8,0" Background="#181818" BorderBrush="#252525" Foreground="#f2f2f2"
+                    ToolTip="{l:Tr History.ButtonTooltip}" AutomationProperties.Name="{l:Tr History.Button}">
+                <StackPanel Orientation="Horizontal">
+                    <fa5:ImageAwesome Icon="Solid_History" Height="15" Foreground="#f2f2f2" Margin="0,0,6,0"/>
+                    <TextBlock Text="{l:Tr History.Button}" FontSize="15" FontWeight="Medium" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
             <Button Name="ShareButton" Click="Share_Click" Margin="5,3,0,3" Height="30" Padding="8,0" Background="#181818" BorderBrush="#252525" Foreground="#f2f2f2"
                     ToolTip="{l:Tr Share.ButtonTooltip}" AutomationProperties.Name="{l:Tr Share.Button}">
                 <StackPanel Orientation="Horizontal">
@@ -291,37 +322,37 @@
                                 <fa5:ImageAwesome Icon="Solid_Search" Foreground="#f2f2f2" Margin="3"/>
                             </Button>
                         </Grid>
-                        <!-- Thin tab that opens the organizer -->
-                        <!-- A real button: keyboard, screen readers and automation can press it -->
-                        <Button Name="CategoriesTab" Grid.Row="1" HorizontalAlignment="Right" Width="22" Margin="0,5,2,3" Cursor="Hand"
-                                ToolTip="{l:Tr Main.CategoriesTooltip}" AutomationProperties.Name="{l:Tr Main.CategoriesTab}" Click="CategoriesTab_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="TabBack" CornerRadius="0,4,4,0" Background="#262626">
-                                        <ContentPresenter VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
-                                        </Trigger>
-                                        <Trigger Property="IsKeyboardFocused" Value="True">
-                                            <Setter TargetName="TabBack" Property="Background" Value="#C25E0C"/>
-                                        </Trigger>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter TargetName="TabBack" Property="Opacity" Value="0.5"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                            <StackPanel VerticalAlignment="Center">
-                                <fa5:ImageAwesome Icon="Solid_LayerGroup" Height="11" Foreground="#c2c2c2" Margin="0,0,0,8"/>
-                                <TextBlock Text="{l:Tr Main.CategoriesTab}" Foreground="#c2c2c2" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center">
-                                    <TextBlock.LayoutTransform>
-                                        <RotateTransform Angle="90"/>
-                                    </TextBlock.LayoutTransform>
-                                </TextBlock>
-                            </StackPanel>
-                        </Button>
+                        <!-- Thin tabs that open the organizer and the roster -->
+                        <!-- Real buttons: keyboard, screen readers and automation can press them -->
+                        <Grid Grid.Row="1" HorizontalAlignment="Right" Width="22" Margin="0,5,2,3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition Height="4"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Button Name="CategoriesTab" Style="{StaticResource ThinTab}"
+                                    ToolTip="{l:Tr Main.CategoriesTooltip}" AutomationProperties.Name="{l:Tr Main.CategoriesTab}" Click="CategoriesTab_Click">
+                                <StackPanel VerticalAlignment="Center">
+                                    <fa5:ImageAwesome Icon="Solid_LayerGroup" Height="11" Foreground="#c2c2c2" Margin="0,0,0,8"/>
+                                    <TextBlock Text="{l:Tr Main.CategoriesTab}" Foreground="#c2c2c2" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center">
+                                        <TextBlock.LayoutTransform>
+                                            <RotateTransform Angle="90"/>
+                                        </TextBlock.LayoutTransform>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                            <Button Name="RosterTab" Grid.Row="2" Style="{StaticResource ThinTab}"
+                                    ToolTip="{l:Tr Roster.TabTooltip}" AutomationProperties.Name="{l:Tr Roster.Tab}" Click="RosterTab_Click">
+                                <StackPanel VerticalAlignment="Center">
+                                    <fa5:ImageAwesome Icon="Solid_UserFriends" Height="11" Foreground="#c2c2c2" Margin="0,0,0,8"/>
+                                    <TextBlock Text="{l:Tr Roster.Tab}" Foreground="#c2c2c2" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center">
+                                        <TextBlock.LayoutTransform>
+                                            <RotateTransform Angle="90"/>
+                                        </TextBlock.LayoutTransform>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                         <DataGrid Grid.Row="1" DragEnter="Add_Enter" Margin="10,5,26,3" Name="ModGrid" AutoGenerateColumns="False" GridLinesVisibility="None" VerticalScrollBarVisibility="Auto" BorderBrush="#424242"
                                   EnableColumnVirtualization="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False"
                                   CanUserResizeColumns="False" CanUserResizeRows="False" CanUserSortColumns="False" AlternatingRowBackground="#2A2A2A"
@@ -434,6 +465,8 @@
                     <GridSplitter Grid.Row="2" Grid.ColumnSpan="8" HorizontalAlignment="Stretch" Height="10" Background="Transparent" />
                     <!-- Organizer of categories, over everything below the buttons -->
                     <ui:CategoriesPanel x:Name="CategoriesPanel" Grid.Row="1" Grid.RowSpan="3" Grid.ColumnSpan="8" Panel.ZIndex="10" Margin="10,0,10,10" Visibility="Collapsed"/>
+                    <!-- Characters and costumes of the select screen, also over everything below the buttons -->
+                    <ui:RosterPanel x:Name="RosterPanel" Grid.Row="1" Grid.RowSpan="3" Grid.ColumnSpan="8" Panel.ZIndex="10" Margin="10,0,10,10" Visibility="Collapsed"/>
 
                     <RichTextBox FontFamily="{StaticResource Monospace}" FontSize="12" Margin="10,3,10,10" Name="ConsoleWindow" Background="#202020" BorderBrush="#424242" Grid.Row="3" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Grid.ColumnSpan="8" TextChanged="ScrollToBottom">
                         <RichTextBox.Resources>
